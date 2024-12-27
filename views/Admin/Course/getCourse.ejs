@@ -1,0 +1,85 @@
+<%- include('../../Includes/begin.ejs') %>
+
+<link rel="stylesheet" href="../../CSS/admin-dashboard.css">
+
+<div class="container-fluid">
+
+    <div id="wrapper">
+
+        <%- include('../../Includes/admin_nav.ejs') %>
+
+        <section id="content-wrapper">
+            <main role="main" class="pt-5 main">
+
+                <div class="main-content">
+                    <div class="header pt-5 d-flex align-items-center"
+                         style="background-color: #f8f9fa; height: 100px;">
+                        <h2 class="text-dark">All Courses</h2>
+                    </div>
+                    <div class="container-fluid mt-5">
+                        <div class="row">
+                            <div class="col-xl-12">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-white border-0">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h3 class="mb-0 text-brown">Courses</h3>
+                                            <input class="form-control w-25" id="searchInput" type="text"
+                                                   placeholder="Search Courses">
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <%- include('../../Includes/messages') %>
+                                        <h6 class="heading-small text-muted mb-4">Course Information</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-striped table-bordered">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th scope="col">#</th>
+                                                        <th scope="col">Course Name</th>
+                                                        <th scope="col">Semester</th>
+                                                        <th scope="col">Manage Course</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="courseTable">
+                                                    <% for(var i=0; i < data.length; i++) { %>
+                                                    <tr>
+                                                        <th scope="row"><%= data[i].c_id %></th>
+                                                        <td><%= data[i].name %></td>
+                                                        <td><%= data[i].semester %></td>
+                                                        <td><a href="/admin/settings/course/<%= data[i].c_id %>"
+                                                               class="btn btn-sm btn-primary">Settings</a></td>
+                                                    </tr>
+                                                    <% } %>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </section>
+
+    </div>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.1/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $("#searchInput").on("keyup", function () {
+            var value = $(this).val().toLowerCase();
+            $("#courseTable tr").filter(function () {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

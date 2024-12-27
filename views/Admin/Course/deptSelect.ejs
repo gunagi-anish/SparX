@@ -1,0 +1,53 @@
+<%- include('../../Includes/begin.ejs') %>
+
+<link rel="stylesheet" href="../../CSS/admin-dashboard.css">
+
+<div class="container-fluid">
+    <div id="wrapper">
+        <%- include('../../Includes/admin_nav.ejs') %>
+
+        <section id="content-wrapper">
+            <main role="main" class="pt-5">
+
+                <div class="main-content">
+                    <div class="header d-flex align-items-center" style="height: 80px; background-color: #f8f9fa;">
+                        <h3 class="mb-0 mx-auto text-primary">Courses</h3>
+                    </div>
+
+                    <div class="container mt-4">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 text-secondary">Search Courses</h5>
+                                <a href="/admin/getAllCourses" class="btn btn-primary btn-sm">All Courses</a>
+                            </div>
+                            <div class="card-body">
+                                <form action="/admin/getCourse" method="POST">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="semester" class="form-label">Semester</label>
+                                            <input type="number" id="semester" name="semester" class="form-control" placeholder="Enter Semester" min="1" max="8">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="department" class="form-label">Department</label>
+                                            <select id="department" name="department" class="form-select">
+                                                <option value="">None</option>
+                                                <% for(const department of departments) { %>
+                                                    <option value="<%= department %>"><%= department %></option>
+                                                <% } %>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100">See Relevant Courses</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </main>
+        </section>
+    </div>
+</div>
+
+<%- include('../../Includes/admin_end.ejs') %>

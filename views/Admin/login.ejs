@@ -1,0 +1,39 @@
+<%- include('../Includes/begin.ejs') %>
+<%- include('../Includes/navbar.ejs') %>
+<section id="content-wrapper">
+    <main role="main" class="pt-5 main">
+        <div class="header text-center pt-5 pt-lg-4">
+            <h1 style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: bold; color: #004aad;">
+                SAHYADRI COLLEGE OF ENGINEERING AND MANAGEMENT</h1>
+        </div>
+        <hr style="border-top: 2px solid #004aad; width: 50%; margin: 20px auto;">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 m-auto">
+                    <div class="card card-body" style="box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border-radius: 8px;">
+                        <h2 class="text-center mb-3" style="color: #004aad;"><i class="fas fa-sign-in-alt"></i> Admin Login</h2>
+                        <%- include('../Includes/messages') %>
+                        <form action="/admin/login" method="POST">
+                            <div class="form-group">
+                                <label for="email" style="color: #333;">Email</label>
+                                <input type="email" id="email" name="email" class="form-control" placeholder="Enter Email" required style="border: 1px solid #ccc; border-radius: 4px;" />
+                            </div>
+                            <div class="form-group">
+                                <label for="password" style="color: #333;">Password</label>
+                                <input type="password" id="password" name="password" class="form-control" placeholder="Enter Password" required style="border: 1px solid #ccc; border-radius: 4px;" />
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block" style="background-color: #004aad; border: none; border-radius: 4px;">Login</button>
+                        </form>
+                        <p class="lead mt-4" style="text-align: center;">
+                            No Account? <a href="/admin/register" style="color: #004aad;">Register</a>
+                        </p>
+                        <p class="lead" style="text-align: center;">
+                            Forgot Password? <a href="/admin/forgot-password" style="color: #004aad;">Generate New Password</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</section>
+<%- include('../Includes/end.ejs') %>

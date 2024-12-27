@@ -1,0 +1,40 @@
+<%- include('../Includes/begin.ejs') %>
+<%- include('../Includes/navbar.ejs') %>
+
+<section id="content-wrapper">
+    <main role="main" class="pt-5 main">
+        <div class="header text-center pt-5 pt-lg-4">
+            <h1 style="font-size: 1.8rem; color: #34495e;">STAFF <span style="color: #7f8c8d;">LOGIN</span></h1>
+        </div>
+
+        <hr style="border-top: 2px solid #bdc3c7;">
+
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 m-auto">
+                    <div class="card card-body" style="box-shadow: 0 1rem 2rem rgba(136, 152, 170, .15); background-color: #ffffff;">
+                        <h1 class="text-center mb-3" style="font-size: 1.5rem; color: #34495e;"><i class="fas fa-sign-in-alt"></i> Login</h1>
+                        <%- include('../Includes/messages') %>
+                        <form action="/staff/login" method="POST">
+                            <div class="form-group">
+                                <label for="email" style="font-size: 1rem; color: black;">Email</label>
+                                <input type="email" id="email" name="email" class="form-control" placeholder="Enter Email" required style="font-size: 0.95rem;"/>
+                            </div>
+                            <div class="form-group">
+                                <label for="password" style="font-size: 1rem; color: black;">Password</label>
+                                <input type="password" id="password" name="password" class="form-control" placeholder="Enter Password" required style="font-size: 0.95rem;"/>
+                            </div>
+                            <button type="submit" class="btn btn-secondary btn-block" style="font-size: 0.95rem; background-color: #7f8c8d; border: none;">Login</button>
+                        </form>
+                        <p class="lead" style="font-size: 1rem; color: blue">
+                            Forgot Password? <a href="/staff/forgot-password" style="color:blue">Generate New Password</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</section>
+
+<%- include('../Includes/end.ejs') %>

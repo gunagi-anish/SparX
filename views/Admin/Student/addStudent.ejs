@@ -1,0 +1,145 @@
+<%- include('../../Includes/begin.ejs') %>
+
+<link rel="stylesheet" href="../../CSS/admin-dashboard.css">
+
+<div class="container-fluid">
+    <div id="wrapper">
+        <%- include('../../Includes/admin_nav.ejs') %>
+
+        <section id="content-wrapper">
+            <main role="main" class="pt-5 main">
+                <div class="main-content">
+                    <!-- Header Section -->
+                    <div class="header pb-4 pt-5 pt-lg-8 d-flex align-items-center"
+                        style="height: 100px; background-color: #f8f9fa;">
+                    </div>
+
+                    <div class="container-fluid mt--7">
+                        <div class="row">
+                            <div class="col-xl-12">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-white border-0">
+                                        <h3 class="mb-0" style="color: #6c757d;">Add New Student</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Form for adding student -->
+                                        <form action="/admin/addStudent" method="POST">
+                                            <!-- Student Information -->
+                                            <h6 class="heading-small text-muted mb-4">Student Information</h6>
+                                            <div class="pl-lg-4">
+                                                <div class="row">
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label class="form-control-label" for="email">Email Address</label>
+                                                            <input type="email" id="email" name="email"
+                                                                class="form-control form-control-alternative"
+                                                                placeholder="jesse@example.com" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label class="form-control-label" for="dob">Date of Birth</label>
+                                                            <input type="date" id="dob" name="dob"
+                                                                class="form-control form-control-alternative" required>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label class="form-control-label" for="name">Full Name</label>
+                                                            <input type="text" id="name" name="name"
+                                                                class="form-control form-control-alternative"
+                                                                placeholder="John Doe" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label class="form-control-label" for="gender">Gender</label>
+                                                            <select class="form-control" id="gender" name="gender" required>
+                                                                <option value="Male">Male</option>
+                                                                <option value="Female">Female</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <hr class="my-4">
+                                            
+                                            <!-- Department Selection -->
+                                            <h6 class="heading-small text-muted mb-4">Department</h6>
+                                            <div class="pl-lg-4">
+                                                <div class="col-lg-12">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label" for="department">Department</label>
+                                                        <select class="form-control" id="department" name="department" required>
+                                                            <% for(const department of departments) { %>
+                                                                <option><%= department %></option>
+                                                            <% } %>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <hr class="my-4">
+
+                                            <!-- Contact Information -->
+                                            <h6 class="heading-small text-muted mb-4">Contact Information</h6>
+                                            <div class="pl-lg-4">
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <div class="form-group">
+                                                            <label class="form-control-label" for="address">Address</label>
+                                                            <input id="address" name="address"
+                                                                class="form-control form-control-alternative"
+                                                                placeholder="Home Address" type="text" required>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-lg-4">
+                                                        <div class="form-group">
+                                                            <label class="form-control-label" for="city">City</label>
+                                                            <input type="text" id="city" name="city"
+                                                                class="form-control form-control-alternative"
+                                                                placeholder="City" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4">
+                                                        <div class="form-group">
+                                                            <label class="form-control-label" for="postal-code">Postal Code</label>
+                                                            <input type="number" id="postal-code" name="postalCode"
+                                                                class="form-control form-control-alternative"
+                                                                placeholder="Postal Code" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4">
+                                                        <div class="form-group">
+                                                            <label class="form-control-label" for="contact">Contact No. (+91)</label>
+                                                            <input type="tel" id="contact" name="contact"
+                                                                class="form-control form-control-alternative"
+                                                                placeholder="0000000000" pattern="[0-9]{10}" required>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <hr class="my-4">
+
+                                            <!-- Submit Button -->
+                                            <button type="submit" class="btn btn-primary btn-block">Register Student</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </section>
+    </div>
+</div>
+
+<%- include('../../Includes/admin_end.ejs') %>

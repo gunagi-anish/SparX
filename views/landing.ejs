@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sahyadri College of Engineering and Management</title>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css"
+        integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="CSS/main.css">
+    <style>
+        /* Ensure the image covers the background and the text is centered */
+        main {
+            background-image: url('https://www.sahyadri.edu.in/_next/image?url=%2Fimages%2Fbgs%2Fhero-bg.jpg&w=1920&q=75');
+            background-size: cover;
+            background-position: center;
+            height: 80vh;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Adding a slight overlay to the background for better text visibility */
+        main::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4); /* Dark overlay */
+            z-index: -1;
+        }
+
+        /* Style for headings and buttons */
+        h1, .lead {
+            font-weight: bold;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            border: none;
+            font-size: 1.1rem;
+            padding: 10px 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container d-flex justify-content-center align-items-center">
+                <img src="https://www.sahyadri.edu.in/images/logo.svg" alt="Sahyadri Logo" style="height: 50px; margin-right: 10px;">
+                <a class="navbar-brand font-weight-bold text-center" href="#">Sahyadri College of Engineering and Management</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="display-4">Welcome to Sahyadri</h1>
+                <p class="lead">A College Management System offering solutions for managing enrollment, students, faculty, 
+                   attendance, scheduling, assignments, and grades.</p>
+                <a href="/index" class="btn btn-secondary btn-lg">Explore More</a>
+            </div>
+            <!-- <div class="col-md-6 text-center">
+                <img src="https://www.sahyadri.edu.in/_next/image?url=%2Fimages%2Fbgs%2Fhero-bg.jpg&w=1920&q=75" alt="College Image" class="img-fluid rounded">
+            </div> -->
+        </div>
+    </main>
+
+    <footer class="bg-light py-3">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2024 College Management System. <span class="text-danger">All Rights Reserved.</span></p>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous">
+    </script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous">
+    </script>
+</body>
+
+</html>

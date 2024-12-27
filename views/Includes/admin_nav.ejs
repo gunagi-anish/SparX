@@ -1,0 +1,109 @@
+<aside id="sidebar-wrapper" style="background-color: #f4f6f9; height: 100%; padding-top: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.1);">
+    <div class="sidebar-brand" style="background-color: #343a40; color: #fff; padding: 20px; text-align: center;">
+        <h2 style="font-size: 18px;">Sahyadri College</h2>
+        <p style="font-size: 12px;">Admin Dashboard</p>
+    </div>
+
+    <ul class="sidebar-nav" style="list-style-type: none; padding: 0; margin: 0;">
+        <!-- Overview -->
+        <li class="<% if (page_name === 'overview') { %>active<% } %>">
+            <a href="/admin/dashboard" style="padding: 10px 20px; display: block; color: #495057; text-decoration: none; border-left: 4px solid transparent; font-size: 14px;">
+                <i class="fa fa-home"></i> Overview
+            </a>
+        </li>
+
+        <!-- Profile -->
+        <li class="<% if (page_name === 'profile') { %>active<% } %>">
+            <a href="/admin/profile" style="padding: 10px 20px; display: block; color: #495057; text-decoration: none; border-left: 4px solid transparent; font-size: 14px;">
+                <i class="fa fa-id-card"></i> Profile
+            </a>
+        </li>
+
+        <!-- Manage Staff -->
+        <li class="<% if (page_name === 'staff') { %>active<% } %>">
+            <a href="#" style="padding: 10px 20px; display: block; color: #495057; text-decoration: none; border-left: 4px solid transparent; font-size: 14px;">
+                <i class="fa fa-chalkboard-teacher"></i> Manage Staff
+            </a>
+            <div style="background-color: #e9ecef; padding-left: 20px;">
+                <a href="/admin/addStaff" style="padding: 10px 15px; display: block; color: #495057; text-decoration: none; font-size: 13px;">Add New Staff</a>
+                <a href="/admin/getStaff" style="padding: 10px 15px; display: block; color: #495057; text-decoration: none; font-size: 13px;">Staff Settings</a>
+            </div>
+        </li>
+
+        <!-- Manage Students -->
+        <li class="<% if (page_name === 'students') { %>active<% } %>">
+            <a href="#" style="padding: 10px 20px; display: block; color: #495057; text-decoration: none; border-left: 4px solid transparent; font-size: 14px;">
+                <i class="fa fa-book-reader"></i> Manage Students
+            </a>
+            <div style="background-color: #e9ecef; padding-left: 20px;">
+                <a href="/admin/addStudent" style="padding: 10px 15px; display: block; color: #495057; text-decoration: none; font-size: 13px;">Add New Student</a>
+                <a href="/admin/getStudent" style="padding: 10px 15px; display: block; color: #495057; text-decoration: none; font-size: 13px;">Student Settings</a>
+            </div>
+        </li>
+
+        <!-- Manage Courses -->
+        <li class="<% if (page_name === 'courses') { %>active<% } %>">
+            <a href="#" style="padding: 10px 20px; display: block; color: #495057; text-decoration: none; border-left: 4px solid transparent; font-size: 14px;">
+                <i class="fa fa-award"></i> Manage Courses
+            </a>
+            <div style="background-color: #e9ecef; padding-left: 20px;">
+                <a href="/admin/addCourse" style="padding: 10px 15px; display: block; color: #495057; text-decoration: none; font-size: 13px;">Add New Course</a>
+                <a href="/admin/getCourse" style="padding: 10px 15px; display: block; color: #495057; text-decoration: none; font-size: 13px;">Course Settings</a>
+            </div>
+        </li>
+
+        <!-- Manage Classes -->
+        <li class="<% if (page_name === 'classes') { %>active<% } %>">
+            <a href="#" style="padding: 10px 20px; display: block; color: #495057; text-decoration: none; border-left: 4px solid transparent; font-size: 14px;">
+                <i class="fa fa-chalkboard"></i> Manage Classes
+            </a>
+            <div style="background-color: #e9ecef; padding-left: 20px;">
+                <a href="/admin/addClass" style="padding: 10px 15px; display: block; color: #495057; text-decoration: none; font-size: 13px;">Add New Class</a>
+                <a href="/admin/getClass" style="padding: 10px 15px; display: block; color: #495057; text-decoration: none; font-size: 13px;">Class Settings</a>
+            </div>
+        </li>
+
+        <!-- Manage Departments -->
+        <li class="<% if (page_name === 'depts') { %>active<% } %>">
+            <a href="#" style="padding: 10px 20px; display: block; color: #495057; text-decoration: none; border-left: 4px solid transparent; font-size: 14px;">
+                <i class="fa fa-school"></i> Manage Dept.
+            </a>
+            <div style="background-color: #e9ecef; padding-left: 20px;">
+                <a href="/admin/addDept" style="padding: 10px 15px; display: block; color: #495057; text-decoration: none; font-size: 13px;">Add New Department</a>
+                <a href="/admin/getDept" style="padding: 10px 15px; display: block; color: #495057; text-decoration: none; font-size: 13px;">Department Settings</a>
+            </div>
+        </li>
+
+        <hr style="margin: 20px 0; border: 1px solid #e1e1e1;">
+
+        <!-- Settings -->
+        <li class="<% if (page_name === 'settings') { %>active<% } %>">
+            <a href="#" style="padding: 10px 20px; display: block; color: #495057; text-decoration: none; border-left: 4px solid transparent; font-size: 14px;">
+                <i class="fa fa-cog"></i> Settings
+            </a>
+            <div style="background-color: #e9ecef; padding-left: 20px;">
+                <a href="/admin/info_settings" style="padding: 10px 15px; display: block; color: #495057; text-decoration: none; font-size: 13px;">Information Settings</a>
+                <a href="/admin/password_settings" style="padding: 10px 15px; display: block; color: #495057; text-decoration: none; font-size: 13px;">Password Settings</a>
+            </div>
+        </li>
+
+        <!-- Logout -->
+        <li>
+            <a href="/admin/logout" style="padding: 10px 20px; display: block; color: #495057; text-decoration: none; font-size: 14px;">
+                <i class="fa fa-sign-out-alt"></i> Logout
+            </a>
+        </li>
+    </ul>
+</aside>
+
+<div id="navbar-wrapper" style="position: fixed; width: 100%; top: 0; z-index: 999; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <nav class="navbar navbar-dark" style="background-color: #343a40;">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a href="#" class="navbar-brand" id="sidebar-toggle" style="color: #fff; font-size: 16px;">
+                    <i class="fa fa-bars"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+</div>

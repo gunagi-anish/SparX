@@ -1,0 +1,74 @@
+<%- include('../../Includes/begin.ejs') %>
+
+<link rel="stylesheet" href="../../CSS/admin-dashboard.css">
+
+<div class="container-fluid">
+    <div id="wrapper">
+
+        <%- include('../../Includes/admin_nav.ejs') %>
+
+        <section id="content-wrapper">
+            <main role="main" class="pt-5 main">
+
+                <div class="main-content">
+                    <div class="header d-flex align-items-center justify-content-center"
+                        style="height: 100px; background-color: #f8f9fa;">
+                        <h3 class="mb-0" style="color: #343a40;">Add New Course</h3>
+                    </div>
+                    <div class="container-fluid mt-5">
+                        <div class="row justify-content-center">
+                            <div class="col-lg-8">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-white border-0">
+                                        <h4 class="mb-0" style="color: #007bff;">Course Information</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <form action="/admin/addCourse" method="POST">
+                                            <div class="form-group">
+                                                <label for="course" class="form-label">Course Name</label>
+                                                <input type="text" id="course" name="course" class="form-control" placeholder="Enter course name" required>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="semester" class="form-label">Semester</label>
+                                                <input type="number" id="semester" name="semester" class="form-control" placeholder="Enter semester" min="1" max="8" required>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="department" class="form-label">Department</label>
+                                                <select id="department" name="department" class="form-control" required>
+                                                    <% for(const department of departments) { %>
+                                                        <option><%= department %></option>
+                                                    <% } %>
+                                                </select>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="credits" class="form-label">Credits</label>
+                                                <input type="number" id="credits" name="credits" class="form-control" placeholder="Enter credits" required>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="c_type" class="form-label">Course Type</label>
+                                                <select id="c_type" name="c_type" class="form-control" required>
+                                                    <option value="Practical">Practical</option>
+                                                    <option value="Theory">Theory</option>
+                                                </select>
+                                            </div>
+
+                                            <button type="submit" class="btn btn-primary w-100">Add Course</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </section>
+
+    </div>
+</div>
+
+<%- include('../../Includes/admin_end.ejs') %>

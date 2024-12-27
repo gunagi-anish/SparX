@@ -1,0 +1,64 @@
+<%- include('../Includes/begin.ejs') %>
+<link rel="stylesheet" href="../CSS/admin-dashboard.css">
+
+<div class="container-fluid">
+    <div id="wrapper">
+        <%- include('../Includes/admin_nav.ejs') %>
+
+        <section id="content-wrapper">
+            <main role="main" class="main pt-5">
+                <div class="main-content">
+                    <div class="header" style="background-color: #007bff; color: white; height: 80px; display: flex; align-items: center; justify-content: center; border-radius: 8px 8px 0 0;">
+                        <h3>Admin Settings</h3>
+                    </div>
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-xl-12">
+                                <div class="card" style="border: 1px solid #dee2e6; border-radius: 8px; background-color: #ffffff;">
+                                    <div class="card-header" style="background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; border-radius: 8px 8px 0 0; padding: 20px;">
+                                        <h3 class="mb-0" style="color: #343a40;">Update Information</h3>
+                                    </div>
+                                    <div class="card-body" style="padding: 30px;">
+                                        <%- include('../Includes/messages') %>
+                                        <form action="/admin/info_settings" method="POST">
+                                            <h6 style="font-size: 1.1rem; font-weight: 600; color: #6c757d; margin-bottom: 20px;">Personal Information</h6>
+                                            <div class="pl-lg-4">
+                                                <input type="hidden" value="<%= user.email %>" name="old_email">
+
+                                                <div class="form-group">
+                                                    <label for="email" style="font-weight: 500; color: #495057;">Email</label>
+                                                    <input type="email" id="email" name="email" class="form-control" value="<%= user.email %>" placeholder="Email" required style="border-radius: 4px; border: 1px solid #ced4da; padding: 10px;">
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <label for="name" style="font-weight: 500; color: #495057;">Name</label>
+                                                    <input type="text" id="name" name="name" class="form-control" value="<%= user.name %>" placeholder="Name" required style="border-radius: 4px; border: 1px solid #ced4da; padding: 10px;">
+                                                </div>
+                                            </div>
+
+                                            <hr style="border-top: 1px solid #dee2e6;">
+
+                                            <h6 style="font-size: 1.1rem; font-weight: 600; color: #6c757d; margin-bottom: 20px;">Confirm Password</h6>
+                                            <div class="pl-lg-4">
+                                                <div class="form-group">
+                                                    <label for="password" style="font-weight: 500; color: #495057;">Password</label>
+                                                    <input type="password" id="password" name="password" class="form-control" placeholder="Confirm Password" required style="border-radius: 4px; border: 1px solid #ced4da; padding: 10px;">
+                                                </div>
+                                            </div>
+
+                                            <hr style="border-top: 1px solid #dee2e6;">
+
+                                            <button type="submit" class="btn btn-primary btn-block" style="background-color: #007bff; border-color: #007bff; color: #ffffff; padding: 12px 0; font-size: 1rem;">Update Information</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </section>
+    </div>
+</div>
+
+<%- include('../Includes/admin_end.ejs') %>

@@ -1,0 +1,82 @@
+<%- include('../../Includes/begin.ejs') %>
+
+<link rel="stylesheet" href="../../CSS/admin-dashboard.css">
+
+<div class="container-fluid">
+
+    <div id="wrapper">
+
+        <%- include('../../Includes/admin_nav.ejs') %>
+
+        <section id="content-wrapper">
+            <main role="main" class="pt-5 main">
+
+                <div class="main-content">
+                    <!-- Header Section -->
+                    <div class="header pb-4 pt-5 d-flex align-items-center"
+                        style="height: 100px; background-color: #f8f9fa;">
+                    </div>
+
+                    <div class="container-fluid mt--7">
+                        <div class="row">
+                            <div class="col-xl-12">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-white border-0">
+                                        <div class="row align-items-center">
+                                            <div class="col-8">
+                                                <h3 class="mb-0" style="color: #495057;">Students</h3>
+                                            </div>
+                                            <div class="col-4 text-right">
+                                                <a href="/admin/getAllStudents" class="btn btn-sm btn-primary">All Students</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Form to search students -->
+                                        <form action="/admin/getStudent" method="POST">
+                                            <h6 class="heading-small text-muted mb-4">Student Information</h6>
+                                            <div class="pl-lg-4">
+                                                <div class="row">
+                                                    <!-- Section Input -->
+                                                    <div class="col-lg-6 mb-3">
+                                                        <div class="form-group">
+                                                            <label class="form-control-label" for="section">Section</label>
+                                                            <input type="number" id="section" name="section"
+                                                                class="form-control form-control-alternative"
+                                                                placeholder="Enter Section Number" required>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Department Select -->
+                                                    <div class="col-lg-6 mb-3">
+                                                        <div class="form-group">
+                                                            <label class="form-control-label" for="department">Department</label>
+                                                            <select class="form-control" id="department" name="department" required>
+                                                                <option value="">Select a Department</option>
+                                                                <% for(const department of departments) { %>
+                                                                <option><%= department %></option>
+                                                                <% } %>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <hr class="my-4">
+
+                                            <!-- Submit Button -->
+                                            <button type="submit" class="btn btn-primary btn-block">View Students</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </section>
+    </div>
+
+</div>
+
+<%- include('../../Includes/admin_end.ejs') %>

@@ -1,0 +1,72 @@
+<%- include('../Includes/begin.ejs') %>
+
+<link rel="stylesheet" href="../CSS/admin-dashboard.css">
+
+<div class="container-fluid">
+    <div id="wrapper">
+        <%- include('../Includes/admin_nav.ejs') %>
+
+        <section id="content-wrapper">
+            <main role="main" class="pt-5 main">
+                <div class="header pb-4 pb-sm-8 pt-5 pt-lg-4 d-flex align-items-center"
+                    style="max-height: 100px; background-color: #007BFF; color: white; text-align: center; border-radius: 5px;">
+                    <h1 style="font-size: 20px;">Welcome, <%= user.name %></h1>
+                </div>
+
+                <hr style="border-color: #ddd;">
+
+                <div class="row justify-content-center">
+                    <!-- Staff Management Card -->
+                    <div class="col-sm-12 col-md-6 col-lg-4 mb-4">
+                        <div class="card shadow-sm" style="border-radius: 10px; border: 1px solid #e0e0e0;">
+                            <div class="card-body">
+                                <h5 class="card-title text-center" style="font-size: 16px;">Manage Staff</h5>
+                                <p class="card-text" style="font-size: 12px;">Add, edit, or remove staff members. Changes will be reflected immediately.</p>
+                            </div>
+                            <div class="card-footer text-center" style="border-top: 1px solid #e0e0e0;">
+                                <div class="btn-wrapper d-flex justify-content-center">
+                                    <a href="/admin/addStaff" class="btn btn-primary mr-3" style="font-size: 12px;">Add</a>
+                                    <a href="/admin/getStaff" class="btn btn-info" style="font-size: 12px;">Modify</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Management Card -->
+                    <div class="col-sm-12 col-md-6 col-lg-4 mb-4">
+                        <div class="card shadow-sm" style="border-radius: 10px; border: 1px solid #e0e0e0;">
+                            <div class="card-body">
+                                <h5 class="card-title text-center" style="font-size: 16px;">Manage Students</h5>
+                                <p class="card-text" style="font-size: 12px;">Add, edit, or remove student profiles. Updates will reflect immediately in the system.</p>
+                            </div>
+                            <div class="card-footer text-center" style="border-top: 1px solid #e0e0e0;">
+                                <div class="btn-wrapper d-flex justify-content-center">
+                                    <a href="/admin/addStudent" class="btn btn-primary mr-3" style="font-size: 12px;">Add</a>
+                                    <a href="/admin/getStudent" class="btn btn-info" style="font-size: 12px;">Modify</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Course Management Card -->
+                    <div class="col-sm-12 col-md-6 col-lg-4 mb-4">
+                        <div class="card shadow-sm" style="border-radius: 10px; border: 1px solid #e0e0e0;">
+                            <div class="card-body">
+                                <h5 class="card-title text-center" style="font-size: 16px;">Manage Courses</h5>
+                                <p class="card-text" style="font-size: 12px;">Add, edit, or remove courses. Changes will automatically be reflected in the database.</p>
+                            </div>
+                            <div class="card-footer text-center" style="border-top: 1px solid #e0e0e0;">
+                                <div class="btn-wrapper d-flex justify-content-center">
+                                    <a href="/admin/addCourse" class="btn btn-primary mr-3" style="font-size: 12px;">Add</a>
+                                    <a href="/admin/getCourse" class="btn btn-info" style="font-size: 12px;">Modify</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </section>
+    </div>
+</div>
+
+<%- include('../Includes/admin_end.ejs') %>
