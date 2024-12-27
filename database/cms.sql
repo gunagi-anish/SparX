@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS `student` (
 	`contact` VARCHAR(12) NOT NULL,
 	`password` VARCHAR(255) NOT NULL,
 	`section` INT NOT NULL,
-	`joining_date` DATE DEFAULT(CURRENT_DATE),
+	`joining_date` DATE DEFAULT '0000-00-00',
 	`dept_id` VARCHAR(255),	
 	PRIMARY KEY (`s_id`)
 );
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS `class` (
 	`class_id` INT NOT NULL AUTO_INCREMENT UNIQUE,
 	`section` INT NOT NULL,
 	`semester` INT NOT NULL,
-	`year` DATE DEFAULT(CURRENT_DATE),
+	`year` DATE DEFAULT '0000-00-00',
 	`c_id` VARCHAR(100),
 	`st_id` VARCHAR(36) NOT NULL,
 	PRIMARY KEY (`class_id`)

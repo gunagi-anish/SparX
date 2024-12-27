@@ -30,6 +30,11 @@ router.get('/student-report', requireAuth, controller.getStudentReport);
 router.get('/class-report', requireAuth, controller.selectClassReport);
 router.get('/class-report/class/:id', requireAuth, controller.getClassReport);
 
+// Add marks routes
+router.get('/add-marks', requireAuth, controller.getAddMarks);
+router.get('/add-marks/class/:id', requireAuth, controller.getClassMarks);
+router.post('/add-marks/class/:id', requireAuth, controller.postClassMarks);
+
 // 1.5 FORGET PASSWORD
 router.get('/forgot-password', forwardAuth, controller.getForgotPassword);
 router.put('/forgot-password', controller.forgotPassword);

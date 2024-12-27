@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attendance Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .student-info {
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .warning {
+            color: red;
+        }
+        .good {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Sahyadri College of Engineering and Management</h1>
+        <h2>Student Attendance Report</h2>
+    </div>
+
+    <div class="student-info">
+        <p><strong>Name:</strong> <%= studentData.s_name %></p>
+        <p><strong>Semester:</strong> <%= semester %></p>
+        <p><strong>Department:</strong> <%= studentData.dept_id %></p>
+        <p><strong>Generated on:</strong> <%= new Date().toLocaleDateString() %></p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Course</th>
+                <th>Course ID</th>
+                <th>Classes Attended</th>
+                <th>Total Classes</th>
+                <th>Attendance %</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% attendanceStats.forEach(function(course) { %>
+                <tr>
+                    <td><%= course.courseName %></td>
+                    <td><%= course.courseId %></td>
+                    <td><%= course.attendedClasses %></td>
+                    <td><%= course.totalClasses %></td>
+                    <td><%= course.percentage %>%</td>
+                    <td class="<%= course.percentage >= 75 ? 'good' : 'warning' %>">
+                        <%= course.percentage >= 75 ? 'Good Standing' : 'Below Threshold' %>
+                    </td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+
+    <div>
+        <p><strong>Note:</strong></p>
+        <ul>
+            <li>Minimum attendance requirement is 75%</li>
+            <li>Students below the threshold may not be eligible for examinations</li>
+        </ul>
+    </div>
+</body>
+</html> 

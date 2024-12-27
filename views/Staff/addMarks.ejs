@@ -1,0 +1,130 @@
+<%- include('../Includes/begin.ejs') %>
+<%- include('../Includes/staff_nav.ejs') %>
+
+<section id="content-wrapper">
+    <main role="main" class="pt-5 main">
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header pb-4 pt-5 pt-lg-8 d-flex align-items-center" style="background-color: #f1f1f1;">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col">
+                            <h1 class="display-4 text-dark">Add Student Marks</h1>
+                            <p class="text-muted">Add or update marks for <%= classData.course_name %> (<%= classData.c_id %>)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page content -->
+            <div class="container-fluid mt-4">
+                <div class="row">
+                    <div class="col-xl-12 order-xl-1">
+                        <div class="card shadow">
+                            <div class="card-header bg-white border-0">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <h3 class="mb-0">Class Information</h3>
+                                        <p class="text-muted mb-0">Course: <%= classData.course_name %> (<%= classData.c_id %>)</p>
+                                        <p class="text-muted mb-0">Section: <%= classData.section %></p>
+                                        <p class="text-muted mb-0">Semester: <%= classData.semester %></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <form method="POST" action="/staff/add-marks/class/<%= courseId %>">
+                                    <div class="table-responsive">
+                                        <table class="table align-items-center">
+                                            <thead class="thead-dark">
+                                                <tr>
+                                                    <th scope="col">#</th>
+                                                    <th scope="col">Student ID</th>
+                                                    <th scope="col">Name</th>
+                                                    <th scope="col">Internal Marks (40)</th>
+                                                    <th scope="col">External Marks (60)</th>
+                                                    <th scope="col">Total (100)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% if (students.length === 0) { %>
+                                                    <tr>
+                                                        <td colspan="6" class="text-center">No students found in this class</td>
+                                                    </tr>
+                                                <% } else { %>
+                                                    <% students.forEach((student, index) => { %>
+                                                        <tr>
+                                                            <td><%= index + 1 %></td>
+                                                            <td><%= student.s_id %></td>
+                                                            <td><%= student.name %></td>
+                                                            <td>
+                                                                <input type="number" 
+                                                                       class="form-control internal-marks" 
+                                                                       name="marks[<%= student.s_id %>][internal]" 
+                                                                       value="<%= student.internal_marks !== null ? student.internal_marks : '' %>"
+                                                                       min="0" 
+                                                                       max="40">
+                                                            </td>
+                                                            <td>
+                                                                <input type="number" 
+                                                                       class="form-control external-marks" 
+                                                                       name="marks[<%= student.s_id %>][external]" 
+                                                                       value="<%= student.external_marks !== null ? student.external_marks : '' %>"
+                                                                       min="0" 
+                                                                       max="60">
+                                                            </td>
+                                                            <td>
+                                                                <span class="total-marks">
+                                                                    <%= (student.internal_marks !== null && student.external_marks !== null) ? (student.internal_marks + student.external_marks) : 'N/A' %>
+                                                                </span><%= (student.internal_marks !== null && student.external_marks !== null) ? '/100' : '' %>
+                                                            </td>
+                                                        </tr>
+                                                    <% }); %>
+                                                <% } %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="text-center mt-4">
+                                        <button type="submit" class="btn btn-primary">Save Marks</button>
+                                        <a href="/staff/add-marks" class="btn btn-secondary">Back to Classes</a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</section>
+
+<%- include('../Includes/staff_end.ejs') %>
+
+<script>
+    // Auto-calculate total marks
+    document.addEventListener('DOMContentLoaded', function() {
+        const rows = document.querySelectorAll('tbody tr');
+        
+        rows.forEach(row => {
+            const internalInput = row.querySelector('.internal-marks');
+            const externalInput = row.querySelector('.external-marks');
+            const totalSpan = row.querySelector('.total-marks');
+            
+            if (internalInput && externalInput && totalSpan) {
+                const updateTotal = () => {
+                    const internal = internalInput.value === '' ? null : parseInt(internalInput.value);
+                    const external = externalInput.value === '' ? null : parseInt(externalInput.value);
+                    
+                    if (internal === null || external === null) {
+                        totalSpan.textContent = 'N/A';
+                    } else {
+                        totalSpan.textContent = `${internal + external}/100`;
+                    }
+                };
+                
+                internalInput.addEventListener('input', updateTotal);
+                externalInput.addEventListener('input', updateTotal);
+            }
+        });
+    });
+</script> 

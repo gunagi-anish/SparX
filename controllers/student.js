@@ -200,61 +200,6 @@ exports.postSelectAttendance = async (req, res, next) => {
   });
 };
 
-exports.getTimeTable = async (req, res, next) => {
-  const sql1 = 'SELECT * FROM student WHERE s_id = ?';
-  const studentData = (await queryParamPromise(sql1, [req.user]))[0];
-  const days = (
-    await queryParamPromise(
-      'select datediff(current_date(), ?) as diff',
-      studentData.joining_date
-    )
-  )[0].diff;
-  const semester = Math.floor(days / 182) + 1;
-  let coursesData = await queryParamPromise(
-    'select c_id from course where dept_id = ? and semester = ?',
-    [studentData.dept_id, semester]
-  );
-  for (let i = 0; i < coursesData.length; ++i) {
-    coursesData[i] = coursesData[i].c_id;
-  }
-
-  let timeTableData = await queryParamPromise(
-    'select * from time_table where c_id in (?) and section = ? order by day, start_time',
-    [coursesData, studentData.section]
-  );
-  const classesData = await queryParamPromise(
-    'select c_id, st_id from class where c_id in (?) and section = ?',
-    [coursesData, studentData.section]
-  );
-  for (let classData of classesData) {
-    const staffName = (
-      await queryParamPromise('select st_name from staff where st_id = ?', [
-        classData.st_id,
-      ])
-    )[0].st_name;
-    const courseName = (
-      await queryParamPromise('select name from course where c_id = ?', [
-        classData.c_id,
-      ])
-    )[0].name;
-    classData.staffName = staffName;
-    classData.courseName = courseName;
-  }
-  const startTimes = ['10:00', '11:00', '12:00', '13:00'];
-  const endTimes = ['11:00', '12:00', '13:00', '14:00'];
-  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  res.render('Student/timetable', {
-    page_name: 'Time Table',
-    studentData,
-    semester,
-    timeTableData,
-    startTimes,
-    endTimes,
-    dayNames,
-    classesData,
-  });
-};
-
 exports.getLogout = (req, res, next) => {
   res.cookie('jwt', '', { maxAge: 1 });
   req.flash('success_msg', 'You are logged out');
@@ -421,4 +366,152 @@ exports.getAttendanceReport = async (req, res, next) => {
     req.flash('error_msg', 'Error generating attendance report');
     res.redirect('/student/dashboard');
   }
+};
+
+exports.getMarks = async (req, res, next) => {
+    console.log('getMarks function called');
+    try {
+        const studentId = req.user;
+        console.log('Student ID:', studentId);
+
+        if (!studentId) {
+            console.log('No student ID found');
+            throw new Error('Student ID not found');
+        }
+
+        // Get student data with department name
+        const sql1 = `
+            SELECT s.*, d.d_name 
+            FROM student s 
+            JOIN department d ON s.dept_id = d.dept_id 
+            WHERE s.s_id = ?`;
+        const studentData = await queryParamPromise(sql1, [studentId]);
+        
+        if (!studentData || studentData.length === 0) {
+            console.log('No student data found');
+            throw new Error('Student data not found');
+        }
+        console.log('Student Data:', studentData[0]);
+
+        // Get all courses and marks for this student
+        const sql2 = `
+            SELECT c.c_id, c.name as course_name, c.semester,
+                   m.internal_marks,
+                   m.external_marks
+            FROM course c
+            LEFT JOIN marks m ON m.c_id = c.c_id AND m.s_id = ?
+            WHERE c.dept_id = ?
+            ORDER BY c.semester, c.c_id`;
+        
+        const marksData = await queryParamPromise(sql2, [studentId, studentData[0].dept_id]);
+        console.log('Marks Data:', marksData);
+
+        // Render the view
+        return res.render('Student/marks', {
+            page_name: 'marks',
+            studentData: studentData[0],
+            marksData: marksData,
+            error: null
+        });
+
+    } catch (err) {
+        console.error('Error in getMarks:', err);
+        return res.render('Student/marks', {
+            page_name: 'marks',
+            studentData: null,
+            marksData: [],
+            error: err.message
+        });
+    }
+};
+
+const pdf = require('html-pdf');
+const path = require('path');
+
+exports.downloadAttendanceReport = async (req, res, next) => {
+    try {
+        // Get student data
+        const sql1 = 'SELECT * FROM student WHERE s_id = ?';
+        const studentData = (await queryParamPromise(sql1, [req.user]))[0];
+
+        // Get current semester based on joining date
+        const days = (await queryParamPromise('select datediff(current_date(), ?) as diff', studentData.joining_date))[0].diff;
+        const semester = Math.floor(days / 182) + 1;
+
+        // Get courses for current semester
+        const sql2 = 'SELECT * from course WHERE dept_id = ? AND semester = ?';
+        const courseData = await queryParamPromise(sql2, [studentData.dept_id, semester]);
+
+        // Get attendance data for each course
+        let attendanceStats = [];
+        for (let course of courseData) {
+            // Get total classes
+            const totalClasses = await queryParamPromise(
+                'SELECT COUNT(DISTINCT date) as total FROM attendance WHERE c_id = ? AND s_id = ?',
+                [course.c_id, req.user]
+            );
+
+            // Get attended classes
+            const attendedClasses = await queryParamPromise(
+                'SELECT COUNT(*) as attended FROM attendance WHERE c_id = ? AND s_id = ? AND status = 1',
+                [course.c_id, req.user]
+            );
+
+            const total = totalClasses[0].total || 0;
+            const attended = attendedClasses[0].attended || 0;
+            const percentage = total === 0 ? 0 : Math.round((attended / total) * 100);
+
+            attendanceStats.push({
+                courseId: course.c_id,
+                courseName: course.name,
+                totalClasses: total,
+                attendedClasses: attended,
+                percentage: percentage
+            });
+        }
+
+        // Render the PDF template
+        res.render('Student/attendanceReportPDF', {
+            studentData,
+            semester,
+            attendanceStats,
+            layout: false
+        }, (err, html) => {
+            if (err) {
+                console.error('Error rendering PDF template:', err);
+                req.flash('error_msg', 'Error generating PDF report');
+                return res.redirect('/student/attendance-report');
+            }
+
+            // PDF generation options
+            const options = {
+                format: 'A4',
+                border: {
+                    top: '20px',
+                    right: '20px',
+                    bottom: '20px',
+                    left: '20px'
+                }
+            };
+
+            // Generate PDF
+            pdf.create(html, options).toBuffer((err, buffer) => {
+                if (err) {
+                    console.error('Error generating PDF:', err);
+                    req.flash('error_msg', 'Error generating PDF report');
+                    return res.redirect('/student/attendance-report');
+                }
+
+                // Send the PDF
+                res.setHeader('Content-Type', 'application/pdf');
+                res.setHeader('Content-Disposition', `attachment; filename=attendance_report_${studentData.s_name.replace(/\s+/g, '_')}.pdf`);
+                res.send(buffer);
+            });
+        });
+
+    } catch (err) {
+        console.error('Error in downloadAttendanceReport:', err);
+        req.flash('error_msg', 'Error generating attendance report');
+        res.redirect('/student/attendance-report');
+    }
 };

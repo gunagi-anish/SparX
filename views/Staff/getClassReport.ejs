@@ -18,6 +18,7 @@
 </head>
 
 <body>
+    <%- include('../Includes/begin.ejs') %>
     <%- include('../Includes/staff_nav.ejs') %>
 
     <section id="content-wrapper">
@@ -26,7 +27,6 @@
                 <!-- Header -->
                 <div class="header pb-4 pb-sm-8 pt-5 pt-lg-8 d-flex align-items-center"
                     style="height: 100px; background-size: cover; background-position: center top;">
-                    <!-- Header container -->
                 </div>
                 <!-- Page content -->
                 <div class="container-fluid mt--7">
@@ -38,73 +38,76 @@
                                         <div class="col-8">
                                             <h3 class="mb-0">Class Report</h3>
                                         </div>
-
                                     </div>
                                 </div>
                                 <div class="card-body">
-                                    <h6 class="form-control-label mb-5"><b>COURSE : </b>
-                                        <%= classData[0].c_id %> || <b>SECTION : </b>
-                                        <%= classData[0].section %>
-                                    </h6>
-                                    <div class="pl-lg-4">
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <div class="form-group focused">
-                                                    <div class="table-responsive" style="overflow-x: hidden;">
-                                                        <form method="POST"
-                                                            action="/staff/student-attendance/class/<%= classData[0].c_id %>">
-                                                            <div class="form-group row">
-                                                                <label for="date-input"
-                                                                    class="col-lg-3 col-sm-4 col-form-label">
-                                                                    <h3 class="mb-0">Add new assignment:</h3>
-                                                                </label>
-                                                                <div class="col-lg-4 col-sm-4 pb-4">
-                                                                    <input class="form-control" type="datetime-local"
-                                                                        name="date" id="date-input">
-                                                                </div>
-                                                                <div class="col-lg-4 col-sm-4">
-                                                                    <a id="mark-all-present" style="color: white;"
-                                                                        class="btn btn-primary">Mark
-                                                                        All
-                                                                        Present</a>
+                                    <div class="course-info mb-4">
+                                        <h5><strong>Course:</strong> <%= classData.course_name %> (<%= classData.c_id %>)</h5>
+                                        <h5><strong>Section:</strong> <%= classData.section %></h5>
+                                        <h5><strong>Semester:</strong> <%= classData.semester %></h5>
+                                    </div>
+                                    
+                                    <div class="table-responsive">
+                                        <table class="table align-items-center table-hover">
+                                            <thead class="thead-dark">
+                                                <tr>
+                                                    <th scope="col">#</th>
+                                                    <th scope="col">Student ID</th>
+                                                    <th scope="col">Name</th>
+                                                    <th scope="col">Total Classes</th>
+                                                    <th scope="col">Classes Attended</th>
+                                                    <th scope="col">Attendance %</th>
+                                                    <th scope="col">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% attendanceStats.forEach((student, index) => { %>
+                                                    <tr>
+                                                        <td><%= index + 1 %></td>
+                                                        <td><%= student.s_id %></td>
+                                                        <td><%= student.name %></td>
+                                                        <td><%= student.total_classes %></td>
+                                                        <td><%= student.attended_classes %></td>
+                                                        <td>
+                                                            <div class="d-flex align-items-center">
+                                                                <span class="mr-2"><%= student.percentage %>%</span>
+                                                                <div class="progress" style="width: 100px;">
+                                                                    <div class="progress-bar <%= student.percentage >= 75 ? 'bg-success' : 'bg-danger' %>" 
+                                                                         role="progressbar" 
+                                                                         style="width: <%= student.percentage %>%"
+                                                                         aria-valuenow="<%= student.percentage %>" 
+                                                                         aria-valuemin="0" 
+                                                                         aria-valuemax="100">
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <table class="table">
-                                                                <thead class="thead-dark">
-                                                                    <tr>
-                                                                        <th scope="col">#</th>
-                                                                        <th scope="col">Name</th>
-                                                                        <th scope="col">Mark Present</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                </tbody>
-
-                                                            </table>
-                                                            <button id="submit" style="color: white;"
-                                                                class="btn btn-primary btn-block">Mark
-                                                                Attendance</>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge badge-pill <%= student.percentage >= 75 ? 'badge-success' : 'badge-danger' %>">
+                                                                <%= student.percentage >= 75 ? 'Good Standing' : 'Attendance Shortage' %>
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                <% }); %>
+                                            </tbody>
+                                        </table>
                                     </div>
+
+                                    <% if (attendanceStats.length === 0) { %>
+                                        <div class="alert alert-info mt-4" role="alert">
+                                            No attendance records found for this class.
+                                        </div>
+                                    <% } %>
                                 </div>
                             </div>
                         </div>
-
-
                     </div>
                 </div>
             </div>
         </main>
     </section>
-    </div>
 
-
-
-    </div>
+    <%- include('../Includes/staff_end.ejs') %>
 
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
         integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous">

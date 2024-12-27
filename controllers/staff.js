@@ -233,17 +233,53 @@ exports.getClassReport = async (req, res, next) => {
   const courseId = req.params.id;
   const staffId = req.user;
   const section = req.query.section;
+  
+  // Get class data
   const classData = await queryParamPromise(
-    'SELECT * FROM class WHERE c_id = ? AND st_id = ? AND section = ?',
+    'SELECT cl.*, co.name as course_name FROM class cl JOIN course co ON cl.c_id = co.c_id WHERE cl.c_id = ? AND cl.st_id = ? AND cl.section = ?',
     [courseId, staffId, section]
   );
+
+  // Get students in this class
+  const students = await queryParamPromise(
+    'SELECT s.* FROM student s WHERE s.dept_id = ? AND s.section = ?',
+    [classData[0].dept_id, section]
+  );
+
+  // Get attendance data for each student
+  const attendanceStats = [];
+  for (const student of students) {
+    const totalClasses = await queryParamPromise(
+      'SELECT COUNT(DISTINCT date) as total FROM attendance WHERE c_id = ?',
+      [courseId]
+    );
+    
+    const attendedClasses = await queryParamPromise(
+      'SELECT COUNT(*) as attended FROM attendance WHERE c_id = ? AND s_id = ? AND status = 1',
+      [courseId, student.s_id]
+    );
+
+    const percentage = totalClasses[0].total > 0 
+      ? ((attendedClasses[0].attended / totalClasses[0].total) * 100).toFixed(2)
+      : 0;
+
+    attendanceStats.push({
+      s_id: student.s_id,
+      name: student.name,
+      total_classes: totalClasses[0].total,
+      attended_classes: attendedClasses[0].attended,
+      percentage: percentage
+    });
+  }
+
   const sql1 = 'SELECT * FROM staff WHERE st_id = ?';
-  const user = req.user;
-  const data = await queryParamPromise(sql1, [user]);
+  const staffData = await queryParamPromise(sql1, [staffId]);
+
   res.render('Staff/getClassReport', {
-    user: data[0],
-    classData,
-    page_name: 'cls-report',
+    user: staffData[0],
+    classData: classData[0],
+    attendanceStats,
+    page_name: 'cls-report'
   });
 };
 
@@ -356,5 +392,135 @@ exports.resetPassword = (req, res, next) => {
       errors.push({ msg: 'Authentication Error' });
       res.render('Staff/resetPassword', { errors });
     }
+  }
+};
+
+exports.getAddMarks = async (req, res, next) => {
+  try {
+    const sql1 = 'SELECT * FROM staff WHERE st_id = ?';
+    const staffData = await queryParamPromise(sql1, [req.user]);
+
+    const sql2 = 'SELECT cl.class_id, cl.section, cl.semester, cl.c_id, co.name FROM class AS cl, course AS co WHERE st_id = ? AND co.c_id = cl.c_id ORDER BY cl.semester;';
+    const classData = await queryParamPromise(sql2, [staffData[0].st_id]);
+
+    res.render('Staff/selectClassMarks', {
+      user: staffData[0],
+      classData,
+      btnInfo: 'Add Marks',
+      page_name: 'marks'
+    });
+  } catch (err) {
+    console.error(err);
+    req.flash('error_msg', 'Error loading classes');
+    res.redirect('/staff/dashboard');
+  }
+};
+
+exports.getClassMarks = async (req, res, next) => {
+  try {
+    const courseId = req.params.id;
+    const section = req.query.section;
+    
+    // Get class data with department info
+    const sql1 = `
+      SELECT cl.*, co.name as course_name, co.dept_id 
+      FROM class cl 
+      JOIN course co ON cl.c_id = co.c_id 
+      WHERE cl.c_id = ? AND cl.section = ?`;
+    const classData = await queryParamPromise(sql1, [courseId, section]);
+
+    if (!classData || classData.length === 0) {
+      req.flash('error_msg', 'Class not found');
+      return res.redirect('/staff/add-marks');
+    }
+
+    console.log('Class Data:', classData[0]);
+
+    // Get all students in this department and section
+    const sql2 = `
+      SELECT s.s_id, s.s_name as name, s.email 
+      FROM student s
+      WHERE s.dept_id = ? 
+      AND s.section = ?
+      ORDER BY s.s_name`;
+    
+    const students = await queryParamPromise(sql2, [
+      classData[0].dept_id,
+      parseInt(section)  // Convert section to integer since it's stored as int in DB
+    ]);
+
+    console.log('Found students:', students.length);
+
+    // Get existing marks
+    for (let student of students) {
+      const sql3 = 'SELECT * FROM marks WHERE s_id = ? AND c_id = ?';
+      const marks = await queryParamPromise(sql3, [student.s_id, courseId]);
+      if (marks.length > 0) {
+        student.internal_marks = marks[0].internal_marks;
+        student.external_marks = marks[0].external_marks;
+      } else {
+        student.internal_marks = 0;
+        student.external_marks = 0;
+      }
+    }
+
+    res.render('Staff/addMarks', {
+      page_name: 'marks',
+      classData: classData[0],
+      students,
+      courseId
+    });
+  } catch (err) {
+    console.error('Error in getClassMarks:', err);
+    req.flash('error_msg', 'Error loading student marks');
+    res.redirect('/staff/add-marks');
+  }
+};
+
+exports.postClassMarks = async (req, res, next) => {
+  try {
+    const courseId = req.params.id;
+    const { marks } = req.body;
+
+    // Log the received marks data
+    console.log('Received marks data:', marks);
+
+    for (const studentId in marks) {
+      const internal = marks[studentId].internal === '' ? null : parseInt(marks[studentId].internal);
+      const external = marks[studentId].external === '' ? null : parseInt(marks[studentId].external);
+
+      console.log(`Processing marks for student ${studentId}:`, { internal, external });
+
+      // Check if marks already exist
+      const existingMarks = await queryParamPromise(
+        'SELECT * FROM marks WHERE s_id = ? AND c_id = ?',
+        [studentId, courseId]
+      );
+
+      console.log('Existing marks:', existingMarks);
+
+      if (existingMarks.length > 0) {
+        // Update existing marks
+        const updateResult = await queryParamPromise(
+          'UPDATE marks SET internal_marks = ?, external_marks = ? WHERE s_id = ? AND c_id = ?',
+          [internal, external, studentId, courseId]
+        );
+        console.log('Update result:', updateResult);
+      } else {
+        // Insert new marks
+        const insertResult = await queryParamPromise(
+          'INSERT INTO marks (s_id, c_id, internal_marks, external_marks) VALUES (?, ?, ?, ?)',
+          [studentId, courseId, internal, external]
+        );
+        console.log('Insert result:', insertResult);
+      }
+    }
+
+    req.flash('success_msg', 'Marks updated successfully');
+    res.redirect('/staff/add-marks');
+  } catch (err) {
+    console.error('Error in postClassMarks:', err);
+    req.flash('error_msg', 'Error updating marks');
+    res.redirect('/staff/add-marks');
   }
 };
