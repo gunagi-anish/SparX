@@ -24,6 +24,11 @@
                    <%} %>">
                     <a href="/student/selectAttendance"><i class="fa fa-calendar-check"></i>Attendance</a>
                 </li>
+                <li class="<% if (page_name === 'attendance-report') { %>
+                    active
+                   <%} %>">
+                    <a href="/student/attendance-report"><i class="fa fa-chart-bar"></i>Attendance Report</a>
+                </li>
                 <li class="<% if (page_name === 'timetable') { %>
                     active
                    <%} %>">

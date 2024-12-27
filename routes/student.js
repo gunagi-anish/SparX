@@ -13,6 +13,7 @@ router.get('/profile', requireAuth, controller.getProfile);
 
 router.get('/selectAttendance', requireAuth, controller.getSelectAttendance);
 router.post('/selectAttendance', requireAuth, controller.postSelectAttendance);
+router.get('/attendance-report', requireAuth, controller.getAttendanceReport);
 
 router.get('/timetable', requireAuth, controller.getTimeTable);
 

@@ -367,3 +367,58 @@ exports.resetPassword = (req, res, next) => {
     }
   }
 };
+
+exports.getAttendanceReport = async (req, res, next) => {
+  try {
+    // Get student data
+    const sql1 = 'SELECT * FROM student WHERE s_id = ?';
+    const studentData = (await queryParamPromise(sql1, [req.user]))[0];
+
+    // Get current semester based on joining date
+    const days = (await queryParamPromise('select datediff(current_date(), ?) as diff', studentData.joining_date))[0].diff;
+    const semester = Math.floor(days / 182) + 1;
+
+    // Get courses for current semester
+    const sql2 = 'SELECT * from course WHERE dept_id = ? AND semester = ?';
+    const courseData = await queryParamPromise(sql2, [studentData.dept_id, semester]);
+
+    // Get attendance data for each course
+    let attendanceStats = [];
+    for (let course of courseData) {
+      // Get total classes
+      const totalClasses = await queryParamPromise(
+        'SELECT COUNT(DISTINCT date) as total FROM attendance WHERE c_id = ? AND s_id = ?',
+        [course.c_id, req.user]
+      );
+
+      // Get attended classes
+      const attendedClasses = await queryParamPromise(
+        'SELECT COUNT(*) as attended FROM attendance WHERE c_id = ? AND s_id = ? AND status = 1',
+        [course.c_id, req.user]
+      );
+
+      const total = totalClasses[0].total || 0;
+      const attended = attendedClasses[0].attended || 0;
+      const percentage = total === 0 ? 0 : Math.round((attended / total) * 100);
+
+      attendanceStats.push({
+        courseId: course.c_id,
+        courseName: course.name,
+        totalClasses: total,
+        attendedClasses: attended,
+        percentage: percentage
+      });
+    }
+
+    res.render('Student/attendanceReport', {
+      page_name: 'attendance',
+      studentData,
+      semester,
+      attendanceStats
+    });
+  } catch (err) {
+    console.error(err);
+    req.flash('error_msg', 'Error generating attendance report');
+    res.redirect('/student/dashboard');
+  }
+};
