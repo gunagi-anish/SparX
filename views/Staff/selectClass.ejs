@@ -1,7 +1,6 @@
 <%- include('../Includes/begin.ejs') %>
 <%- include('../Includes/staff_nav.ejs') %>
 
-
 <section id="content-wrapper">
     <main role="main" class="pt-5 main">
         <div class="main-content">
@@ -14,14 +13,13 @@
             <div class="container-fluid mt--7">
                 <div class="row">
                     <div class="col-xl-12 order-xl-1">
-                        <div class="card bg-secondary shadow">
+                        <div class="card shadow-lg">
                             <div class="card-header bg-white border-0">
                                 <div class="row align-items-center">
                                     <div class="col-8">
-                                        <h3 class="mb-0">Mark Attendance</h3>
+                                        <h3 class="mb-0 text-primary">Mark Attendance</h3>
                                         <%- include('../Includes/messages') %>
                                     </div>
-
                                 </div>
                             </div>
                             <div class="card-body">
@@ -32,14 +30,14 @@
                                             <div class="form-group focused">
                                                 <label class="form-control-label">Class Information</label>
                                                 <div class="table-responsive">
-                                                    <table class="table">
+                                                    <table class="table table-bordered table-striped">
                                                         <thead class="thead-dark">
                                                             <tr>
                                                                 <th scope="col">#</th>
-                                                                <th scope="col">COURSE</th>
-                                                                <th scope="col">SEMESTER</th>
-                                                                <th scope="col">CLASS</th>
-                                                                <th scope="col">SETTINGS</th>
+                                                                <th scope="col">Course</th>
+                                                                <th scope="col">Semester</th>
+                                                                <th scope="col">Class</th>
+                                                                <th scope="col">Settings</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
@@ -49,24 +47,23 @@
                                                                     <%= i + 1 %>
                                                                 </th>
                                                                 <td>
-                                                                    <%= classData[i].name %> (<%=
-                                                                                        classData[i].c_id %>)
+                                                                    <%= classData[i].name %> (<%= classData[i].c_id %>)
                                                                 </td>
                                                                 <td>
                                                                     <%= classData[i].semester %>
                                                                 </td>
                                                                 <td>
-                                                                    <%= user.dept_id %>-<%=
-                                                                                        classData[i].section %>
+                                                                    <%= user.dept_id %>-<%= classData[i].section %>
                                                                 </td>
-                                                                <td><a href="/staff/student-attendance/class/<%= classData[i].c_id %>"
-                                                                        class="btn btn-sm btn-primary"><%= btnInfo %></a>
+                                                                <td>
+                                                                    <a href="/staff/student-attendance/class/<%= classData[i].c_id %>"
+                                                                        class="btn btn-sm btn-outline-primary">
+                                                                        <%= btnInfo %>
+                                                                    </a>
                                                                 </td>
-
                                                             </tr>
                                                             <% } %>
                                                         </tbody>
-
                                                     </table>
                                                 </div>
                                             </div>
@@ -76,17 +73,10 @@
                             </div>
                         </div>
                     </div>
-
-
                 </div>
             </div>
         </div>
-
-
-
-
     </main>
 </section>
-
 
 <%- include('../Includes/staff_end.ejs') %>
