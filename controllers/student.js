@@ -193,14 +193,23 @@ const getAttendanceData = async (year, courseData, s_id) => {
     const existingMonths = await queryParamPromise(sql, [courseIds, s_id, year]);
     const relevantMonths = existingMonths.map(row => row.month - 1); // JS months are 0-based
 
+    // If no months found, show the current month
+    if (relevantMonths.length === 0 && year === new Date().getFullYear()) {
+      relevantMonths.push(new Date().getMonth());
+    }
+
     for (const month of relevantMonths) {
       let dayNumber = 1;
       let date = new Date(year, month, dayNumber);
       let days = [];
       let outerStatus = [];
+      
+      // Process all days in the month
       while (date.getMonth() === month) {
         let status = [];
         const sqlDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
+
+        // Get attendance for all courses on this date
         const sql3 = `
           SELECT c_id, status 
           FROM attendance 
@@ -209,22 +218,35 @@ const getAttendanceData = async (year, courseData, s_id) => {
           AND date = ?
         `;
         const attendanceData = await queryParamPromise(sql3, [courseIds, s_id, sqlDate]);
+        
+        // Create a map of course_id to status
         const attendanceMap = {};
         attendanceData.forEach(record => {
-          attendanceMap[record.c_id] = record.status;
+          // Ensure status is explicitly 0 or 1
+          attendanceMap[record.c_id] = record.status === null ? 0 : Number(record.status);
         });
+        
+        // Add status for each course
         for (const course of courseData) {
-          status.push({ status: attendanceMap[course.c_id] || '-' });
+          if (attendanceMap[course.c_id] !== undefined) {
+            status.push({ status: attendanceMap[course.c_id] });
+          } else {
+            status.push({ status: undefined }); // No attendance record for this date/course
+          }
         }
+        
         outerStatus.push(status);
         const monthName = monthNames[month];
         days.push({ monthName, dayNumber });
+        
         dayNumber++;
         date.setDate(date.getDate() + 1);
       }
+      
       isPresent.push(outerStatus);
       monthDates.push(days);
     }
+    
     return [monthDates, isPresent];
   } catch (err) {
     console.error('Error in getAttendanceData:', err);
