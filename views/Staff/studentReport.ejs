@@ -1,0 +1,76 @@
+<%- include('../Includes/begin.ejs') %>
+<%- include('../Includes/staff_nav.ejs') %>
+
+<section id="content-wrapper">
+    <main role="main" class="pt-5 main">
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header pb-4 pb-sm-8 pt-5 pt-lg-8 d-flex align-items-center"
+                style="height: 100px; background-size: cover; background-position: center top;">
+                <!-- Header container -->
+            </div>
+            <!-- Page content -->
+            <div class="container-fluid mt--7">
+                <div class="row">
+                    <div class="col-xl-12 order-xl-1">
+                        <div class="card bg-secondary shadow">
+                            <div class="card-header bg-white border-0">
+                                <div class="row align-items-center">
+                                    <div class="col-8">
+                                        <h3 class="mb-0">Student Report - <%= classData.course_name %> (Section <%= classData.section %>)</h3>
+                                        <%- include('../Includes/messages') %>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <% if (studentStats.length === 0) { %>
+                                    <div class="alert alert-info">No students found in this class.</div>
+                                <% } else { %>
+                                    <div class="table-responsive">
+                                        <table class="table align-items-center table-hover">
+                                            <thead class="thead-dark">
+                                                <tr>
+                                                    <th scope="col">#</th>
+                                                    <th scope="col">Student ID</th>
+                                                    <th scope="col">Name</th>
+                                                    <th scope="col">Email</th>
+                                                    <th scope="col">Attendance</th>
+                                                    <th scope="col">Marks</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% studentStats.forEach((student, index) => { %>
+                                                    <tr>
+                                                        <td><%= index + 1 %></td>
+                                                        <td><%= student.s_id %></td>
+                                                        <td><%= student.name %></td>
+                                                        <td><%= student.email %></td>
+                                                        <td>
+                                                            <div>Total Classes: <%= student.attendance.total_classes %></div>
+                                                            <div>Attended: <%= student.attendance.attended_classes %></div>
+                                                            <div>Percentage: <%= student.attendance.percentage %>%</div>
+                                                        </td>
+                                                        <td>
+                                                            <div>Internal: <%= student.marks.internal %></div>
+                                                            <div>External: <%= student.marks.external %></div>
+                                                            <div>Total: <%= student.marks.total %></div>
+                                                        </td>
+                                                    </tr>
+                                                <% }); %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                <% } %>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/staff/student-report" class="btn btn-secondary">Back to Class Selection</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</section>
+
+<%- include('../Includes/staff_end.ejs') %>

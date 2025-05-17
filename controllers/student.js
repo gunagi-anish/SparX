@@ -109,95 +109,167 @@ exports.getProfile = async (req, res, next) => {
 };
 
 exports.getSelectAttendance = async (req, res, next) => {
-  res.render('Student/selectAttendance', {
-    page_name: 'attendance',
-    curYear: 2021,
-  });
+  try {
+    // Get student data to determine current semester
+    const sql1 = 'SELECT * FROM student WHERE s_id = ?';
+    const studentData = (await queryParamPromise(sql1, [req.user]))[0];
+
+    if (!studentData) {
+      req.flash('error_msg', 'Student data not found');
+      return res.redirect('/student/dashboard');
+    }
+
+    // Calculate current semester based on joining date
+    const days = (await queryParamPromise('select datediff(current_date(), ?) as diff', [studentData.joining_date]))[0].diff;
+    let currentSemester = Math.min(Math.floor(days / 182) + 1, 8); // Cap at 8 semesters
+
+    // Get courses for current semester
+    let sql2 = `
+      SELECT c.*, d.d_name 
+      FROM course c 
+      JOIN department d ON c.dept_id = d.dept_id 
+      WHERE c.dept_id = ? 
+      AND c.semester = ?
+    `;
+    let courseData = await queryParamPromise(sql2, [studentData.dept_id, currentSemester]);
+
+    // If no courses for calculated semester, fallback to highest semester with courses
+    if (courseData.length === 0) {
+      const sqlMaxSem = `SELECT MAX(semester) as maxSem FROM course WHERE dept_id = ?`;
+      const maxSemResult = await queryParamPromise(sqlMaxSem, [studentData.dept_id]);
+      if (maxSemResult[0].maxSem) {
+        currentSemester = maxSemResult[0].maxSem;
+        courseData = await queryParamPromise(sql2, [studentData.dept_id, currentSemester]);
+      }
+    }
+
+    // Get current year
+    const currentYear = new Date().getFullYear();
+
+    // Check if there's any attendance data for this student
+    const sql3 = `
+      SELECT COUNT(*) as count 
+      FROM attendance a
+      JOIN course c ON a.c_id = c.c_id
+      WHERE a.s_id = ? 
+      AND c.dept_id = ?
+    `;
+    const attendanceCount = await queryParamPromise(sql3, [req.user, studentData.dept_id]);
+
+    res.render('Student/selectAttendance', {
+      page_name: 'attendance',
+      curYear: currentYear,
+      currentSemester: currentSemester,
+      studentData: studentData,
+      hasAttendance: attendanceCount[0].count > 0,
+      hasCourses: courseData.length > 0,
+      courseData: courseData // Pass course data to the view
+    });
+  } catch (err) {
+    console.error('Error in getSelectAttendance:', err);
+    req.flash('error_msg', 'Error loading attendance page');
+    res.redirect('/student/dashboard');
+  }
 };
 
-const getAttendanceData = async (year, months, courseData, s_id) => {
+const getAttendanceData = async (year, courseData, s_id) => {
   let monthDates = [];
   let isPresent = [];
   const monthNames = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'April',
-    'May',
-    'June',
-    'July',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
+    'Jan', 'Feb', 'Mar', 'April', 'May', 'June',
+    'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
-  for (month of months) {
-    let dayNumber = 1;
-    let date = new Date(year, month, dayNumber);
-    let days = [];
-    let outerStatus = [];
-    while (date.getMonth() === month) {
-      let status = [];
-      const sqlDate =
-        year +
-        '-' +
-        (month < 9 ? '0' + (month + 1) : month + 1) +
-        '-' +
-        (dayNumber <= 9 ? '0' + dayNumber : dayNumber);
-      const sql3 =
-        'SELECT status from attendance WHERE c_id = ? AND s_id = ? AND date = ?';
-      for (course of courseData) {
-        const attendanceData = (
-          await queryParamPromise(sql3, [course.c_id, s_id, sqlDate])
-        )[0];
-        status.push(attendanceData);
+
+  try {
+    const courseIds = courseData.map(course => course.c_id);
+
+    // Get all months with attendance for this student and year
+    const sql = `
+      SELECT DISTINCT MONTH(date) as month
+      FROM attendance
+      WHERE c_id IN (?) AND s_id = ? AND YEAR(date) = ?
+      ORDER BY month
+    `;
+    const existingMonths = await queryParamPromise(sql, [courseIds, s_id, year]);
+    const relevantMonths = existingMonths.map(row => row.month - 1); // JS months are 0-based
+
+    for (const month of relevantMonths) {
+      let dayNumber = 1;
+      let date = new Date(year, month, dayNumber);
+      let days = [];
+      let outerStatus = [];
+      while (date.getMonth() === month) {
+        let status = [];
+        const sqlDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
+        const sql3 = `
+          SELECT c_id, status 
+          FROM attendance 
+          WHERE c_id IN (?) 
+          AND s_id = ? 
+          AND date = ?
+        `;
+        const attendanceData = await queryParamPromise(sql3, [courseIds, s_id, sqlDate]);
+        const attendanceMap = {};
+        attendanceData.forEach(record => {
+          attendanceMap[record.c_id] = record.status;
+        });
+        for (const course of courseData) {
+          status.push({ status: attendanceMap[course.c_id] || '-' });
+        }
+        outerStatus.push(status);
+        const monthName = monthNames[month];
+        days.push({ monthName, dayNumber });
+        dayNumber++;
+        date.setDate(date.getDate() + 1);
       }
-      outerStatus.push(status);
-      const monthName = monthNames[month];
-      days.push({ monthName, dayNumber });
-      dayNumber++;
-      date.setDate(date.getDate() + 1);
+      isPresent.push(outerStatus);
+      monthDates.push(days);
     }
-    isPresent.push(outerStatus);
-    monthDates.push(days);
+    return [monthDates, isPresent];
+  } catch (err) {
+    console.error('Error in getAttendanceData:', err);
+    throw err;
   }
-  return [monthDates, isPresent];
 };
 
 exports.postSelectAttendance = async (req, res, next) => {
-  const { year, semester } = req.body;
-  const sql1 = 'SELECT * FROM student WHERE s_id = ?';
-  const studentData = (await queryParamPromise(sql1, [req.user]))[0];
-  const sql2 = 'SELECT * from course WHERE dept_id = ? AND semester = ?';
-  const courseData = await queryParamPromise(sql2, [
-    studentData.dept_id,
-    semester,
-  ]);
-  var monthDates, isPresent;
-  if (semester % 2 === 0) {
-    [monthDates, isPresent] = await getAttendanceData(
+  try {
+    const { year, semester } = req.body;
+    const sql1 = 'SELECT * FROM student WHERE s_id = ?';
+    const studentData = (await queryParamPromise(sql1, [req.user]))[0];
+    if (!studentData) {
+      req.flash('error_msg', 'Student data not found');
+      return res.redirect('/student/dashboard');
+    }
+    const sql2 = 'SELECT * from course WHERE dept_id = ? AND semester = ?';
+    const courseData = await queryParamPromise(sql2, [studentData.dept_id, semester]);
+    if (courseData.length === 0) {
+      req.flash('error_msg', 'No courses found for the selected semester');
+      return res.redirect('/student/selectAttendance');
+    }
+    // Only show months with attendance
+    const [monthDates, isPresent] = await getAttendanceData(
       parseInt(year),
-      [0, 1, 2, 3],
       courseData,
       req.user
     );
-  } else {
-    [monthDates, isPresent] = await getAttendanceData(
-      parseInt(year),
-      [7, 8, 9, 10],
+    if (monthDates.length === 0) {
+      req.flash('error_msg', 'No attendance records found for the selected period');
+      return res.redirect('/student/selectAttendance');
+    }
+    res.render('Student/attendance', {
+      page_name: 'attendance',
+      curSemester: semester,
+      studentData,
       courseData,
-      req.user
-    );
+      monthDates,
+      isPresent,
+    });
+  } catch (err) {
+    console.error('Error in postSelectAttendance:', err);
+    req.flash('error_msg', 'Error loading attendance data');
+    res.redirect('/student/selectAttendance');
   }
-  res.render('Student/attendance', {
-    page_name: 'attendance',
-    curSemester: semester,
-    studentData,
-    courseData,
-    monthDates,
-    isPresent,
-  });
 };
 
 exports.getLogout = (req, res, next) => {
@@ -319,31 +391,37 @@ exports.getAttendanceReport = async (req, res, next) => {
     const sql1 = 'SELECT * FROM student WHERE s_id = ?';
     const studentData = (await queryParamPromise(sql1, [req.user]))[0];
 
-    // Get current semester based on joining date
-    const days = (await queryParamPromise('select datediff(current_date(), ?) as diff', studentData.joining_date))[0].diff;
-    const semester = Math.floor(days / 182) + 1;
+    // Calculate current semester
+    const days = (await queryParamPromise('select datediff(current_date(), ?) as diff', [studentData.joining_date]))[0].diff;
+    let semester = Math.min(Math.floor(days / 182) + 1, 8);
 
     // Get courses for current semester
-    const sql2 = 'SELECT * from course WHERE dept_id = ? AND semester = ?';
-    const courseData = await queryParamPromise(sql2, [studentData.dept_id, semester]);
+    let sql2 = 'SELECT * from course WHERE dept_id = ? AND semester = ?';
+    let courseData = await queryParamPromise(sql2, [studentData.dept_id, semester]);
+
+    // Fallback to highest semester with courses
+    if (courseData.length === 0) {
+      const sqlMaxSem = 'SELECT MAX(semester) as maxSem FROM course WHERE dept_id = ?';
+      const maxSemResult = await queryParamPromise(sqlMaxSem, [studentData.dept_id]);
+      if (maxSemResult[0].maxSem) {
+        semester = maxSemResult[0].maxSem;
+        courseData = await queryParamPromise(sql2, [studentData.dept_id, semester]);
+      }
+    }
 
     // Get attendance data for each course
     let attendanceStats = [];
     for (let course of courseData) {
-      // Get total classes
-      const totalClasses = await queryParamPromise(
-        'SELECT COUNT(DISTINCT date) as total FROM attendance WHERE c_id = ? AND s_id = ?',
-        [course.c_id, req.user]
-      );
-
-      // Get attended classes
-      const attendedClasses = await queryParamPromise(
-        'SELECT COUNT(*) as attended FROM attendance WHERE c_id = ? AND s_id = ? AND status = 1',
-        [course.c_id, req.user]
-      );
-
-      const total = totalClasses[0].total || 0;
-      const attended = attendedClasses[0].attended || 0;
+      const sql3 = `
+        SELECT 
+          COUNT(DISTINCT date) as total_classes,
+          SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as attended_classes
+        FROM attendance 
+        WHERE c_id = ? AND s_id = ?`;
+      const result = await queryParamPromise(sql3, [course.c_id, req.user]);
+      const stats = result[0];
+      const total = stats.total_classes || 0;
+      const attended = stats.attended_classes || 0;
       const percentage = total === 0 ? 0 : Math.round((attended / total) * 100);
 
       attendanceStats.push({
@@ -362,7 +440,7 @@ exports.getAttendanceReport = async (req, res, next) => {
       attendanceStats
     });
   } catch (err) {
-    console.error(err);
+    console.error('Error in getAttendanceReport:', err);
     req.flash('error_msg', 'Error generating attendance report');
     res.redirect('/student/dashboard');
   }
@@ -429,89 +507,94 @@ const pdf = require('html-pdf');
 const path = require('path');
 
 exports.downloadAttendanceReport = async (req, res, next) => {
-    try {
-        // Get student data
-        const sql1 = 'SELECT * FROM student WHERE s_id = ?';
-        const studentData = (await queryParamPromise(sql1, [req.user]))[0];
+  try {
+    // Get student data
+    const sql1 = 'SELECT * FROM student WHERE s_id = ?';
+    const studentData = (await queryParamPromise(sql1, [req.user]))[0];
 
-        // Get current semester based on joining date
-        const days = (await queryParamPromise('select datediff(current_date(), ?) as diff', studentData.joining_date))[0].diff;
-        const semester = Math.floor(days / 182) + 1;
+    // Calculate current semester
+    const days = (await queryParamPromise('select datediff(current_date(), ?) as diff', [studentData.joining_date]))[0].diff;
+    let semester = Math.min(Math.floor(days / 182) + 1, 8);
 
-        // Get courses for current semester
-        const sql2 = 'SELECT * from course WHERE dept_id = ? AND semester = ?';
-        const courseData = await queryParamPromise(sql2, [studentData.dept_id, semester]);
+    // Get courses for current semester
+    let sql2 = 'SELECT * from course WHERE dept_id = ? AND semester = ?';
+    let courseData = await queryParamPromise(sql2, [studentData.dept_id, semester]);
 
-        // Get attendance data for each course
-        let attendanceStats = [];
-        for (let course of courseData) {
-            // Get total classes
-            const totalClasses = await queryParamPromise(
-                'SELECT COUNT(DISTINCT date) as total FROM attendance WHERE c_id = ? AND s_id = ?',
-                [course.c_id, req.user]
-            );
+    // Fallback to highest semester with courses
+    if (courseData.length === 0) {
+      const sqlMaxSem = 'SELECT MAX(semester) as maxSem FROM course WHERE dept_id = ?';
+      const maxSemResult = await queryParamPromise(sqlMaxSem, [studentData.dept_id]);
+      if (maxSemResult[0].maxSem) {
+        semester = maxSemResult[0].maxSem;
+        courseData = await queryParamPromise(sql2, [studentData.dept_id, semester]);
+      }
+    }
 
-            // Get attended classes
-            const attendedClasses = await queryParamPromise(
-                'SELECT COUNT(*) as attended FROM attendance WHERE c_id = ? AND s_id = ? AND status = 1',
-                [course.c_id, req.user]
-            );
+    // Get attendance data for each course
+    let attendanceStats = [];
+    for (let course of courseData) {
+      const sql3 = `
+        SELECT 
+          COUNT(DISTINCT date) as total_classes,
+          SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as attended_classes
+        FROM attendance 
+        WHERE c_id = ? AND s_id = ?`;
+      const result = await queryParamPromise(sql3, [course.c_id, req.user]);
+      const stats = result[0];
+      const total = stats.total_classes || 0;
+      const attended = stats.attended_classes || 0;
+      const percentage = total === 0 ? 0 : Math.round((attended / total) * 100);
 
-            const total = totalClasses[0].total || 0;
-            const attended = attendedClasses[0].attended || 0;
-            const percentage = total === 0 ? 0 : Math.round((attended / total) * 100);
+      attendanceStats.push({
+        courseId: course.c_id,
+        courseName: course.name,
+        totalClasses: total,
+        attendedClasses: attended,
+        percentage: percentage
+      });
+    }
 
-            attendanceStats.push({
-                courseId: course.c_id,
-                courseName: course.name,
-                totalClasses: total,
-                attendedClasses: attended,
-                percentage: percentage
-            });
+    res.render('Student/attendanceReportPDF', {
+      studentData,
+      semester,
+      attendanceStats,
+      layout: false
+    }, (err, html) => {
+      if (err) {
+        console.error('Error rendering PDF template:', err);
+        req.flash('error_msg', 'Error generating PDF report');
+        return res.redirect('/student/attendance-report');
+      }
+
+      // PDF generation options
+      const options = {
+        format: 'A4',
+        border: {
+          top: '20px',
+          right: '20px',
+          bottom: '20px',
+          left: '20px'
+        }
+      };
+
+      // Generate PDF
+      pdf.create(html, options).toBuffer((err, buffer) => {
+        if (err) {
+          console.error('Error generating PDF:', err);
+          req.flash('error_msg', 'Error generating PDF report');
+          return res.redirect('/student/attendance-report');
         }
 
-        // Render the PDF template
-        res.render('Student/attendanceReportPDF', {
-            studentData,
-            semester,
-            attendanceStats,
-            layout: false
-        }, (err, html) => {
-            if (err) {
-                console.error('Error rendering PDF template:', err);
-                req.flash('error_msg', 'Error generating PDF report');
-                return res.redirect('/student/attendance-report');
-            }
+        // Send the PDF
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=attendance_report_${studentData.s_name.replace(/\s+/g, '_')}.pdf`);
+        res.send(buffer);
+      });
+    });
 
-            // PDF generation options
-            const options = {
-                format: 'A4',
-                border: {
-                    top: '20px',
-                    right: '20px',
-                    bottom: '20px',
-                    left: '20px'
-                }
-            };
-
-            // Generate PDF
-            pdf.create(html, options).toBuffer((err, buffer) => {
-                if (err) {
-                    console.error('Error generating PDF:', err);
-                    req.flash('error_msg', 'Error generating PDF report');
-                    return res.redirect('/student/attendance-report');
-                }
-
-                // Send the PDF
-                res.setHeader('Content-Type', 'application/pdf');
-                res.setHeader('Content-Disposition', `attachment; filename=attendance_report_${studentData.s_name.replace(/\s+/g, '_')}.pdf`);
-                res.send(buffer);
-            });
-        });
-
-    } catch (err) {
-        console.error('Error in downloadAttendanceReport:', err);
-        req.flash('error_msg', 'Error generating attendance report');
-        res.redirect('/student/attendance-report');
-    }
+  } catch (err) {
+    console.error('Error in downloadAttendanceReport:', err);
+    req.flash('error_msg', 'Error generating attendance report');
+    res.redirect('/student/attendance-report');
+  }
 };

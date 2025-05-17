@@ -28,30 +28,50 @@
                                 <div class="d-flex justify-content-between mb-4">
                                     <h6><b>NAME: </b><%= studentData.s_name %> || <b>SEMESTER: </b><%= curSemester %></h6>
                                 </div>
-                                <div class="table-responsive">
-                                    <% for (let i = 0; i < monthDates.length; ++i) {%>
-                                    <table class="table table-bordered table-striped mb-4">
-                                        <thead class="thead-dark">
-                                            <tr>
-                                                <th scope="col">Date</th>
-                                                <% for (let j = 0; j < courseData.length; ++j) {%>
-                                                <th scope="col"><%=courseData[j].c_id%></th>
+                                <% if (monthDates.length === 0) { %>
+                                    <div class="alert alert-info">
+                                        No attendance records found for the selected period.
+                                    </div>
+                                <% } else { %>
+                                    <div class="table-responsive">
+                                        <% for (let i = 0; i < monthDates.length; ++i) {%>
+                                        <table class="table table-bordered table-striped mb-4">
+                                            <thead class="thead-dark">
+                                                <tr>
+                                                    <th scope="col">Date</th>
+                                                    <% for (let j = 0; j < courseData.length; ++j) {%>
+                                                    <th scope="col"><%=courseData[j].c_id%></th>
+                                                    <%}%>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% for (let j = 0; j < monthDates[i].length; ++j) {%>
+                                                <tr>
+                                                    <th><%= monthDates[i][j].monthName %> <%= monthDates[i][j].dayNumber %></th>
+                                                    <% for (let k = 0; k < courseData.length; ++k) {%>
+                                                    <td>
+                                                      <% if (
+                                                        isPresent[i][j][k] == undefined ||
+                                                        isPresent[i][j][k].status === undefined ||
+                                                        isPresent[i][j][k].status === null
+                                                      ) { %>
+                                                        -
+                                                      <% } else if (isPresent[i][j][k].status === 0 || isPresent[i][j][k].status === "0") { %>
+                                                        Absent
+                                                      <% } else if (isPresent[i][j][k].status === 1 || isPresent[i][j][k].status === "1") { %>
+                                                        Present
+                                                      <% } else { %>
+                                                        <%= isPresent[i][j][k].status %>
+                                                      <% } %>
+                                                    </td>
+                                                    <%}%>
+                                                </tr>
                                                 <%}%>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <% for (let j = 0; j < monthDates[i].length; ++j) {%>
-                                            <tr>
-                                                <th><%= monthDates[i][j].monthName %> <%= monthDates[i][j].dayNumber %></th>
-                                                <% for (let k = 0; k < courseData.length; ++k) {%>
-                                                <td><%= isPresent[i][j][k] == undefined ? '-' : isPresent[i][j][k].status %></td>
-                                                <%}%>
-                                            </tr>
-                                            <%}%>
-                                        </tbody>
-                                    </table>
-                                    <%}%>
-                                </div>
+                                            </tbody>
+                                        </table>
+                                        <%}%>
+                                    </div>
+                                <% } %>
                             </div>
                         </div>
                     </div>
