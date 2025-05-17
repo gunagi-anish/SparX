@@ -1,6 +1,7 @@
 const mysql = require('mysql');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const pdf = require('html-pdf');
 
 const mailgun = require('mailgun-js');
 const DOMAIN = process.env.DOMAIN_NAME;
@@ -642,5 +643,103 @@ exports.postClassMarks = async (req, res, next) => {
     console.error('Error in postClassMarks:', err);
     req.flash('error_msg', 'Error updating marks');
     res.redirect('/staff/add-marks');
+  }
+};
+
+exports.downloadClassReport = async (req, res, next) => {
+  const courseId = req.params.id;
+  const staffId = req.user;
+  const section = req.query.section;
+  
+  try {
+    // Get staff data
+    const sql1 = 'SELECT * FROM staff WHERE st_id = ?';
+    const staffData = await queryParamPromise(sql1, [staffId]);
+    
+    // Get class data with department info
+    const classData = await queryParamPromise(
+      'SELECT cl.*, co.name as course_name, co.dept_id FROM class cl JOIN course co ON cl.c_id = co.c_id WHERE cl.c_id = ? AND cl.st_id = ? AND cl.section = ?',
+      [courseId, staffId, section]
+    );
+
+    if (!classData || classData.length === 0) {
+      req.flash('error_msg', 'Class not found');
+      return res.redirect('/staff/class-report');
+    }
+
+    // Get students in this class
+    const students = await queryParamPromise(
+      'SELECT s.* FROM student s WHERE s.dept_id = ? AND s.section = ?',
+      [classData[0].dept_id, parseInt(section)]
+    );
+
+    // Get attendance data for each student
+    const attendanceStats = [];
+    for (const student of students) {
+      const totalClasses = await queryParamPromise(
+        'SELECT COUNT(DISTINCT date) as total FROM attendance WHERE c_id = ?',
+        [courseId]
+      );
+      
+      const attendedClasses = await queryParamPromise(
+        'SELECT COUNT(*) as attended FROM attendance WHERE c_id = ? AND s_id = ? AND status = 1',
+        [courseId, student.s_id]
+      );
+
+      const percentage = totalClasses[0].total > 0 
+        ? ((attendedClasses[0].attended / totalClasses[0].total) * 100).toFixed(2)
+        : 0;
+
+      attendanceStats.push({
+        s_id: student.s_id,
+        name: student.s_name,
+        total_classes: totalClasses[0].total,
+        attended_classes: attendedClasses[0].attended,
+        percentage: percentage
+      });
+    }
+
+    // Render the PDF template
+    res.render('Staff/classReportPDF', {
+      user: staffData[0],
+      classData: classData[0],
+      attendanceStats,
+      layout: false
+    }, (err, html) => {
+      if (err) {
+        console.error('Error rendering PDF template:', err);
+        req.flash('error_msg', 'Error generating PDF report');
+        return res.redirect(`/staff/class-report/${courseId}?section=${section}`);
+      }
+
+      // PDF generation options
+      const options = {
+        format: 'A4',
+        border: {
+          top: '20px',
+          right: '20px',
+          bottom: '20px',
+          left: '20px'
+        }
+      };
+
+      // Generate PDF
+      pdf.create(html, options).toBuffer((err, buffer) => {
+        if (err) {
+          console.error('Error generating PDF:', err);
+          req.flash('error_msg', 'Error generating PDF report');
+          return res.redirect(`/staff/class-report/${courseId}?section=${section}`);
+        }
+
+        // Send the PDF
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=class_report_${courseId}_section_${section}.pdf`);
+        res.send(buffer);
+      });
+    });
+  } catch (err) {
+    console.error('Error in downloadClassReport:', err);
+    req.flash('error_msg', 'Error generating class report');
+    res.redirect('/staff/class-report');
   }
 };

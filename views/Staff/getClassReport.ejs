@@ -47,6 +47,12 @@
                                         <h5><strong>Semester:</strong> <%= classData.semester %></h5>
                                     </div>
                                     
+                                    <div class="mb-4">
+                                        <a href="/staff/class-report/<%= classData.c_id %>/download?section=<%= classData.section %>" class="btn btn-success">
+                                            <i class="fas fa-download mr-1"></i> Download PDF Report
+                                        </a>
+                                    </div>
+                                    
                                     <div class="table-responsive">
                                         <table class="table align-items-center table-hover">
                                             <thead class="thead-dark">
