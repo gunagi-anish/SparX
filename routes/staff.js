@@ -26,6 +26,7 @@ router.get('/timetable', requireAuth, controller.getTimeTable);
 router.post('/student-attendance', requireAuth, controller.markAttendance);
 
 router.get('/student-report', requireAuth, controller.getStudentReport);
+router.get('/student-report/class/:id', requireAuth, controller.getStudentReportDetails);
 
 router.get('/class-report', requireAuth, controller.selectClassReport);
 router.get('/class-report/class/:id', requireAuth, controller.getClassReport);

@@ -13,11 +13,11 @@
             <div class="container-fluid mt--7">
                 <div class="row">
                     <div class="col-xl-12 order-xl-1">
-                        <div class="card shadow-lg">
+                        <div class="card bg-secondary shadow">
                             <div class="card-header bg-white border-0">
                                 <div class="row align-items-center">
                                     <div class="col-8">
-                                        <h3 class="mb-0 text-primary">Mark Attendance</h3>
+                                        <h3 class="mb-0">Student Report</h3>
                                         <%- include('../Includes/messages') %>
                                     </div>
                                 </div>
@@ -56,7 +56,7 @@
                                                                     <%= user.dept_id %>-<%= classData[i].section %>
                                                                 </td>
                                                                 <td>
-                                                                    <a href="/staff/student-attendance/class/<%= classData[i].c_id %>"
+                                                                    <a href="/staff/student-report/class/<%= classData[i].c_id %>?section=<%= classData[i].section %>"
                                                                         class="btn btn-sm btn-outline-primary">
                                                                         <%= btnInfo %>
                                                                     </a>
