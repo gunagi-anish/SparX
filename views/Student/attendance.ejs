@@ -49,7 +49,10 @@
                                                 <tr>
                                                     <th><%= monthDates[i][j].monthName %> <%= monthDates[i][j].dayNumber %></th>
                                                     <% for (let k = 0; k < courseData.length; ++k) {%>
-                                                    <td>
+                                                    <td class="<%= 
+                                                      (isPresent[i][j][k] && isPresent[i][j][k].status === 1) ? 'bg-success text-white' : 
+                                                      (isPresent[i][j][k] && isPresent[i][j][k].status === 0) ? 'bg-danger text-white' : ''
+                                                    %>">
                                                       <% if (
                                                         isPresent[i][j][k] == undefined ||
                                                         isPresent[i][j][k].status === undefined ||
