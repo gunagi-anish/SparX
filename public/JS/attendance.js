@@ -13,6 +13,13 @@ $(document).ready(function () {
   let date = year + '-' + month + '-' + day;
   $('#date-input').val(date);
 
+  // Initialize hidden input values based on checkbox status when page loads
+  $("input[type='checkbox']").each(function () {
+    const s_id = $(this).attr('id');
+    const isChecked = $(this).prop('checked');
+    $(`input[name=${s_id}]`).val(isChecked ? 'True' : 'False');
+  });
+
   // Date onChange handle
   $('#date-input').change(function () {
     const attendance_date = $('#date-input').val();
@@ -41,12 +48,9 @@ $(document).ready(function () {
   // onClick checkbox toggle
   $("input[type='checkbox']").click(function () {
     const s_id = $(this).attr('id');
-    let isPresent = $(`input[name=${s_id}]`).val();
-    if (isPresent == 'False') {
-      isPresent = 'True';
-    } else {
-      isPresent = 'False';
-    }
-    $(`input[name=${s_id}]`).val(isPresent);
+    // Get the current checked state of the checkbox
+    const isChecked = $(this).prop('checked');
+    // Set the hidden input value based on the checkbox state
+    $(`input[name=${s_id}]`).val(isChecked ? 'True' : 'False');
   });
 });

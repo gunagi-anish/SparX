@@ -31,6 +31,7 @@ router.get('/student-report/class/:id', requireAuth, controller.getStudentReport
 router.get('/class-report', requireAuth, controller.selectClassReport);
 router.get('/class-report/class/:id', requireAuth, controller.getClassReport);
 router.get('/class-report/:id/download', requireAuth, controller.downloadClassReport);
+router.get('/class-report/:id/download-excel', requireAuth, controller.downloadClassReportExcel);
 
 // Add marks routes
 router.get('/add-marks', requireAuth, controller.getAddMarks);

@@ -2,6 +2,8 @@ const mysql = require('mysql');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const pdf = require('html-pdf');
+const path = require('path');
+const ExcelJS = require('exceljs');
 
 const mailgun = require('mailgun-js');
 const DOMAIN = process.env.DOMAIN_NAME;
@@ -169,36 +171,47 @@ exports.markAttendance = async (req, res, next) => {
 };
 
 exports.postAttendance = async (req, res, next) => {
-  const { date, courseId, ...students } = req.body;
-  let attedData = await queryParamPromise(
-    'SELECT * FROM attendance WHERE date = ? AND c_id = ?',
-    [date, courseId]
-  );
-
-  if (attedData.length === 0) {
+  try {
+    const { date, courseId, ...students } = req.body;
+    console.log('Received attendance data:', { date, courseId, studentCount: Object.keys(students).length });
+    
+    // Process each student individually
     for (const s_id in students) {
-      const isPresent = students[s_id];
-      await queryParamPromise('insert into attendance set ?', {
-        s_id: s_id,
-        date: date,
-        c_id: courseId,
-        status: isPresent == 'True' ? 1 : 0,
-      });
+      const isPresent = students[s_id] === 'True' ? 1 : 0;
+      console.log(`Processing student ${s_id}: ${isPresent ? 'Present' : 'Absent'}`);
+      
+      // Check if a record already exists for this student, date, and course
+      const existingRecord = await queryParamPromise(
+        'SELECT * FROM attendance WHERE s_id = ? AND date = ? AND c_id = ?',
+        [s_id, date, courseId]
+      );
+      
+      if (existingRecord.length === 0) {
+        // Insert new record
+        console.log(`Inserting new attendance record for student ${s_id}`);
+        await queryParamPromise('INSERT INTO attendance SET ?', {
+          s_id: s_id,
+          date: date,
+          c_id: courseId,
+          status: isPresent
+        });
+      } else {
+        // Update existing record
+        console.log(`Updating attendance record for student ${s_id}`);
+        await queryParamPromise(
+          'UPDATE attendance SET status = ? WHERE s_id = ? AND date = ? AND c_id = ?',
+          [isPresent, s_id, date, courseId]
+        );
+      }
     }
-    req.flash('success_msg', 'Attendance done successfully');
+    
+    req.flash('success_msg', 'Attendance updated successfully');
+    return res.redirect('/staff/student-attendance');
+  } catch (err) {
+    console.error('Error in postAttendance:', err);
+    req.flash('error_msg', 'Error updating attendance');
     return res.redirect('/staff/student-attendance');
   }
-
-  for (const s_id in students) {
-    const isPresent = students[s_id] === 'True' ? 1 : 0;
-    await queryParamPromise(
-      'update attendance set status = ? WHERE s_id = ? AND date = ? AND c_id = ?',
-      [isPresent, s_id, date, courseId]
-    );
-  }
-
-  req.flash('success_msg', 'Attendance updated successfully');
-  return res.redirect('/staff/student-attendance');
 };
 
 exports.getStudentReport = async (req, res, next) => {
@@ -740,6 +753,296 @@ exports.downloadClassReport = async (req, res, next) => {
   } catch (err) {
     console.error('Error in downloadClassReport:', err);
     req.flash('error_msg', 'Error generating class report');
+    res.redirect('/staff/class-report');
+  }
+};
+
+exports.downloadClassReportExcel = async (req, res, next) => {
+  const courseId = req.params.id;
+  const staffId = req.user;
+  const section = req.query.section;
+  
+  try {
+    // Get class data with department info
+    const classData = await queryParamPromise(
+      'SELECT cl.*, co.name as course_name, co.dept_id FROM class cl JOIN course co ON cl.c_id = co.c_id WHERE cl.c_id = ? AND cl.st_id = ? AND cl.section = ?',
+      [courseId, staffId, section]
+    );
+
+    if (!classData || classData.length === 0) {
+      req.flash('error_msg', 'Class not found');
+      return res.redirect('/staff/class-report');
+    }
+
+    // Get staff data
+    const sql1 = 'SELECT * FROM staff WHERE st_id = ?';
+    const staffData = await queryParamPromise(sql1, [staffId]);
+
+    // Get students in this class
+    const students = await queryParamPromise(
+      'SELECT s.* FROM student s WHERE s.dept_id = ? AND s.section = ?',
+      [classData[0].dept_id, parseInt(section)]
+    );
+
+    // Get the current month and year
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const monthName = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' });
+    
+    // Get all dates in the current month where attendance was taken for this course
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+    
+    const formattedFirstDay = firstDay.toISOString().split('T')[0];
+    const formattedLastDay = lastDay.toISOString().split('T')[0];
+    
+    const attendanceDates = await queryParamPromise(
+      'SELECT DISTINCT date FROM attendance WHERE c_id = ? AND date BETWEEN ? AND ? ORDER BY date',
+      [courseId, formattedFirstDay, formattedLastDay]
+    );
+
+    // Create a new Excel workbook
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Attendance Management System';
+    workbook.lastModifiedBy = 'Attendance Management System';
+    workbook.created = new Date();
+    workbook.modified = new Date();
+
+    // Create a worksheet
+    const worksheet = workbook.addWorksheet('Class Attendance');
+    
+    // Set up header row
+    worksheet.mergeCells('A1:G1');
+    const titleCell = worksheet.getCell('A1');
+    titleCell.value = 'Sahyadri College of Engineering and Management';
+    titleCell.font = { size: 14, bold: true };
+    titleCell.alignment = { horizontal: 'center' };
+    
+    worksheet.mergeCells('A2:G2');
+    const subtitleCell = worksheet.getCell('A2');
+    subtitleCell.value = 'Class Attendance Report';
+    subtitleCell.font = { size: 12, bold: true };
+    subtitleCell.alignment = { horizontal: 'center' };
+    
+    // Class info
+    worksheet.getCell('A4').value = 'Course:';
+    worksheet.getCell('B4').value = `${classData[0].course_name} (${classData[0].c_id})`;
+    worksheet.getCell('A5').value = 'Section:';
+    worksheet.getCell('B5').value = classData[0].section;
+    worksheet.getCell('A6').value = 'Semester:';
+    worksheet.getCell('B6').value = classData[0].semester;
+    worksheet.getCell('A7').value = 'Staff:';
+    worksheet.getCell('B7').value = staffData[0].st_name;
+    worksheet.getCell('A8').value = 'Month:';
+    worksheet.getCell('B8').value = `${monthName} ${currentYear}`;
+    
+    // Bold the labels
+    ['A4', 'A5', 'A6', 'A7', 'A8'].forEach(cell => {
+      worksheet.getCell(cell).font = { bold: true };
+    });
+    
+    // Add a summary sheet
+    const summarySheet = workbook.addWorksheet('Summary');
+    
+    // Set up summary sheet header
+    summarySheet.mergeCells('A1:F1');
+    const summaryTitleCell = summarySheet.getCell('A1');
+    summaryTitleCell.value = 'Sahyadri College of Engineering and Management';
+    summaryTitleCell.font = { size: 14, bold: true };
+    summaryTitleCell.alignment = { horizontal: 'center' };
+    
+    summarySheet.mergeCells('A2:F2');
+    const summarySubtitleCell = summarySheet.getCell('A2');
+    summarySubtitleCell.value = 'Class Attendance Summary';
+    summarySubtitleCell.font = { size: 12, bold: true };
+    summarySubtitleCell.alignment = { horizontal: 'center' };
+    
+    // Class info in summary sheet
+    summarySheet.getCell('A4').value = 'Course:';
+    summarySheet.getCell('B4').value = `${classData[0].course_name} (${classData[0].c_id})`;
+    summarySheet.getCell('A5').value = 'Section:';
+    summarySheet.getCell('B5').value = classData[0].section;
+    summarySheet.getCell('A6').value = 'Semester:';
+    summarySheet.getCell('B6').value = classData[0].semester;
+    summarySheet.getCell('A7').value = 'Staff:';
+    summarySheet.getCell('B7').value = staffData[0].st_name;
+    summarySheet.getCell('A8').value = 'Month:';
+    summarySheet.getCell('B8').value = `${monthName} ${currentYear}`;
+    
+    // Bold the labels in summary sheet
+    ['A4', 'A5', 'A6', 'A7', 'A8'].forEach(cell => {
+      summarySheet.getCell(cell).font = { bold: true };
+    });
+    
+    // Add summary table header
+    const summaryHeaderRow = summarySheet.addRow(['#', 'Student ID', 'Name', 'Classes Attended', 'Attendance %', 'Status']);
+    summaryHeaderRow.font = { bold: true };
+    summaryHeaderRow.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFD3D3D3' }
+      };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+    
+    // Add attendance data to summary sheet
+    const attendanceStats = [];
+    for (let i = 0; i < students.length; i++) {
+      const student = students[i];
+      
+      // Get total classes for this course
+      const totalClasses = await queryParamPromise(
+        'SELECT COUNT(DISTINCT date) as total FROM attendance WHERE c_id = ? AND date BETWEEN ? AND ?',
+        [courseId, formattedFirstDay, formattedLastDay]
+      );
+      
+      // Get attended classes for this student
+      const attendedClasses = await queryParamPromise(
+        'SELECT COUNT(*) as attended FROM attendance WHERE c_id = ? AND s_id = ? AND status = 1 AND date BETWEEN ? AND ?',
+        [courseId, student.s_id, formattedFirstDay, formattedLastDay]
+      );
+      
+      const total = totalClasses[0].total || 0;
+      const attended = attendedClasses[0].attended || 0;
+      const percentage = total === 0 ? 0 : Math.round((attended / total) * 100);
+      
+      attendanceStats.push({
+        s_id: student.s_id,
+        name: student.s_name,
+        total_classes: total,
+        attended_classes: attended,
+        percentage: percentage
+      });
+      
+      // Add row to summary sheet
+      const summaryRow = summarySheet.addRow([
+        i + 1,
+        student.s_id,
+        student.s_name,
+        `${attended} / ${total}`,
+        `${percentage}%`,
+        percentage >= 75 ? 'Good Standing' : 'Attendance Shortage'
+      ]);
+      
+      // Style the status cell
+      const statusCell = summaryRow.getCell(6);
+      if (percentage >= 75) {
+        statusCell.font = { color: { argb: '008000' } }; // Green
+      } else {
+        statusCell.font = { color: { argb: 'FF0000' } }; // Red
+      }
+      
+      // Add borders
+      summaryRow.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+    }
+    
+    // Auto-fit columns in summary sheet
+    summarySheet.columns.forEach(column => {
+      column.width = 15;
+    });
+    
+    // Create detailed attendance sheet with dates
+    // First row: headers with student names
+    const headers = ['Date', 'Day'];
+    students.forEach(student => {
+      headers.push(student.s_name);
+    });
+    
+    const headerRow = worksheet.addRow(headers);
+    headerRow.font = { bold: true };
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFD3D3D3' }
+      };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+    
+    // Add a row for each date in the month
+    if (attendanceDates.length > 0) {
+      for (const dateRecord of attendanceDates) {
+        const currentDate = new Date(dateRecord.date);
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
+        
+        const rowData = [dateStr, dayName];
+        
+        // Get attendance for each student on this date
+        for (const student of students) {
+          const attendanceRecord = await queryParamPromise(
+            'SELECT status FROM attendance WHERE c_id = ? AND s_id = ? AND date = ?',
+            [courseId, student.s_id, dateStr]
+          );
+          
+          const status = attendanceRecord.length > 0 
+            ? (attendanceRecord[0].status === 1 ? 'Present' : 'Absent') 
+            : 'N/A';
+          
+          rowData.push(status);
+        }
+        
+        const row = worksheet.addRow(rowData);
+        
+        // Style the status cells
+        for (let i = 3; i < rowData.length + 1; i++) {
+          const cell = row.getCell(i);
+          if (rowData[i - 1] === 'Present') {
+            cell.font = { color: { argb: '008000' } }; // Green
+          } else if (rowData[i - 1] === 'Absent') {
+            cell.font = { color: { argb: 'FF0000' } }; // Red
+          }
+        }
+        
+        // Add borders
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      }
+    } else {
+      // If no attendance records found
+      worksheet.addRow(['No attendance records found for this period']);
+    }
+    
+    // Auto-fit columns
+    worksheet.columns.forEach(column => {
+      column.width = 15;
+    });
+    
+    // Set response headers for Excel download
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=class_report_${courseId}_section_${section}.xlsx`);
+    
+    // Write to response
+    await workbook.xlsx.write(res);
+    
+  } catch (err) {
+    console.error('Error in downloadClassReportExcel:', err);
+    req.flash('error_msg', 'Error generating Excel report');
     res.redirect('/staff/class-report');
   }
 };

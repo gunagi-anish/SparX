@@ -64,7 +64,7 @@
                                                                     <td><%= studentData[i].s_name %></td>
                                                                     <td>
                                                                         <input id="<%= studentData[i].s_id %>" type="checkbox" <%= studentData[i].status === 1 ? "checked" : "" %> class="custom-checkbox">
-                                                                        <input name="<%= studentData[i].s_id %>" value="False" hidden>
+                                                                        <input name="<%= studentData[i].s_id %>" value="<%= studentData[i].status === 1 ? 'True' : 'False' %>" hidden>
                                                                     </td>
                                                                 </tr>
                                                                 <% } %>

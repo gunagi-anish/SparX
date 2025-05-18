@@ -15,6 +15,7 @@ router.get('/selectAttendance', requireAuth, controller.getSelectAttendance);
 router.post('/selectAttendance', requireAuth, controller.postSelectAttendance);
 router.get('/attendance-report', requireAuth, controller.getAttendanceReport);
 router.get('/attendance-report/download', requireAuth, controller.downloadAttendanceReport);
+router.get('/attendance-report/download-excel', requireAuth, controller.downloadAttendanceExcel);
 
 router.get('/marks', requireAuth, controller.getMarks);
 
