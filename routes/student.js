@@ -17,7 +17,8 @@ router.get('/attendance-report', requireAuth, controller.getAttendanceReport);
 router.get('/attendance-report/download', requireAuth, controller.downloadAttendanceReport);
 router.get('/attendance-report/download-excel', requireAuth, controller.downloadAttendanceExcel);
 
-router.get('/marks', requireAuth, controller.getMarks);
+// API route for attendance summary
+router.get('/api/attendance-summary', requireAuth, controller.getAttendanceSummary);
 
 router.get('/logout', requireAuth, controller.getLogout);
 

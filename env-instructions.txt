@@ -1,0 +1,46 @@
+# Instructions for Setting Up Your .env File
+
+Your current .env file is missing several important configurations needed for the email notification functionality. Please add the following to your .env file:
+
+```
+# Server Configuration
+PORT=5000
+URL=http://localhost:5000
+SESSION_SECRET=your_session_secret
+
+# JWT Configuration
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRE=5h
+RESET_PASSWORD_KEY=your_reset_password_key
+
+# Database Configuration
+DB_HOST=localhost
+DB_USER=root
+DB_PASS=your_database_password
+DB_NAME=cumsdbms
+
+# Email Configuration (Gmail)
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-gmail-app-password
+```
+
+## Important Notes:
+
+1. Replace `your_session_secret`, `your_jwt_secret`, and `your_reset_password_key` with secure random strings.
+2. Replace `your_database_password` with your actual MySQL password (leave empty if no password).
+3. Replace `your-email@gmail.com` with your actual Gmail address.
+4. Replace `your-gmail-app-password` with your Gmail App Password (not your regular Gmail password).
+
+## How to Create a Gmail App Password:
+
+1. Go to your Google Account at https://myaccount.google.com/
+2. Select "Security"
+3. Under "Signing in to Google", select "App passwords"
+   (You might need to enable 2-Step Verification first)
+4. Select "Mail" as the app and "Other" as the device
+5. Enter "Sahyadri College Management" as the name
+6. Click "Generate"
+7. Copy the 16-character password
+8. Add this password to your .env file as EMAIL_PASSWORD
+
+These email settings are required for the attendance notification feature to work properly. 

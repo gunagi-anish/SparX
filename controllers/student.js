@@ -2,9 +2,17 @@ const mysql = require('mysql');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-const mailgun = require('mailgun-js');
-const DOMAIN = process.env.DOMAIN_NAME;
-const mg = mailgun({ apiKey: process.env.MAILGUN_API_KEY, domain: DOMAIN });
+// Replace Mailgun with Nodemailer
+const nodemailer = require('nodemailer');
+
+// Create a nodemailer transporter using Gmail
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER || 'your-email@gmail.com',
+    pass: process.env.EMAIL_PASSWORD || 'your-app-password'
+  }
+});
 
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -73,15 +81,73 @@ exports.postLogin = (req, res, next) => {
   }
 };
 
-exports.getDashboard = (req, res, next) => {
-  let sql6 = 'SELECT * FROM student WHERE s_id = ?';
-  db.query(sql6, [req.user], (err, result) => {
-    if (err) throw err;
+exports.getDashboard = async (req, res, next) => {
+  try {
+    // Get student data
+    const sql1 = 'SELECT * FROM student WHERE s_id = ?';
+    const studentData = await queryParamPromise(sql1, [req.user]);
+    
+    if (!studentData || studentData.length === 0) {
+      return res.redirect('/student/login');
+    }
+
+    // Calculate current semester
+    const days = (await queryParamPromise('select datediff(current_date(), ?) as diff', [studentData[0].joining_date]))[0].diff;
+    let semester = Math.min(Math.floor(days / 182) + 1, 8);
+
+    // Get courses for current semester
+    let sql2 = 'SELECT * from course WHERE dept_id = ? AND semester = ? LIMIT 3';
+    let courseData = await queryParamPromise(sql2, [studentData[0].dept_id, semester]);
+
+    // Fallback to highest semester with courses if current semester has no courses
+    if (courseData.length === 0) {
+      const sqlMaxSem = 'SELECT MAX(semester) as maxSem FROM course WHERE dept_id = ?';
+      const maxSemResult = await queryParamPromise(sqlMaxSem, [studentData[0].dept_id]);
+      if (maxSemResult[0].maxSem) {
+        semester = maxSemResult[0].maxSem;
+        courseData = await queryParamPromise(sql2, [studentData[0].dept_id, semester]);
+      }
+    }
+
+    // Get attendance data for each course - UPDATED to match Excel report logic
+    let courseAttendance = [];
+    for (let course of courseData) {
+      // Get all classes for the course (regardless of student attendance)
+      const totalClassesQuery = `
+        SELECT COUNT(DISTINCT date) as total 
+        FROM attendance 
+        WHERE c_id = ?`;
+      const totalClassesResult = await queryParamPromise(totalClassesQuery, [course.c_id]);
+      
+      // Get only the classes the student attended
+      const attendedClassesQuery = `
+        SELECT COUNT(*) as attended 
+        FROM attendance 
+        WHERE c_id = ? AND s_id = ? AND status = 1`;
+      const attendedClassesResult = await queryParamPromise(attendedClassesQuery, [course.c_id, req.user]);
+      
+      const total = totalClassesResult[0].total || 0;
+      const attended = attendedClassesResult[0].attended || 0;
+      const percentage = total === 0 ? 0 : Math.round((attended / total) * 100);
+
+      courseAttendance.push({
+        courseId: course.c_id,
+        courseName: course.name,
+        totalClasses: total,
+        attendedClasses: attended,
+        percentage: percentage
+      });
+    }
+
     res.render('Student/dashboard', {
-      name: result[0].s_name,
+      name: studentData[0].s_name,
       page_name: 'overview',
+      courseAttendance: courseAttendance
     });
-  });
+  } catch (err) {
+    console.error('Error in getDashboard:', err);
+    res.redirect('/student/login');
+  }
 };
 
 exports.getProfile = async (req, res, next) => {
@@ -345,9 +411,11 @@ exports.forgotPassword = async (req, res, next) => {
       errors.push({ msg: 'Error In ResetLink' });
       res.render('Student/forgotPassword', { errors });
     } else {
-      mg.messages().send(data, (err, body) => {
-        if (err) throw err;
-        else {
+      transporter.sendMail(data, (err, info) => {
+        if (err) {
+          errors.push({ msg: 'Error sending email' });
+          res.render('Student/forgotPassword', { errors });
+        } else {
           req.flash('success_msg', 'Reset Link Sent Successfully!');
           res.redirect('/student/forgot-password');
         }
@@ -431,19 +499,25 @@ exports.getAttendanceReport = async (req, res, next) => {
       }
     }
 
-    // Get attendance data for each course
+    // Get attendance data for each course - UPDATED to match Excel report logic
     let attendanceStats = [];
     for (let course of courseData) {
-      const sql3 = `
-        SELECT 
-          COUNT(DISTINCT date) as total_classes,
-          SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as attended_classes
+      // Get all classes for the course (regardless of student attendance)
+      const totalClassesQuery = `
+        SELECT COUNT(DISTINCT date) as total 
         FROM attendance 
-        WHERE c_id = ? AND s_id = ?`;
-      const result = await queryParamPromise(sql3, [course.c_id, req.user]);
-      const stats = result[0];
-      const total = stats.total_classes || 0;
-      const attended = stats.attended_classes || 0;
+        WHERE c_id = ?`;
+      const totalClassesResult = await queryParamPromise(totalClassesQuery, [course.c_id]);
+      
+      // Get only the classes the student attended
+      const attendedClassesQuery = `
+        SELECT COUNT(*) as attended 
+        FROM attendance 
+        WHERE c_id = ? AND s_id = ? AND status = 1`;
+      const attendedClassesResult = await queryParamPromise(attendedClassesQuery, [course.c_id, req.user]);
+      
+      const total = totalClassesResult[0].total || 0;
+      const attended = attendedClassesResult[0].attended || 0;
       const percentage = total === 0 ? 0 : Math.round((attended / total) * 100);
 
       attendanceStats.push({
@@ -466,63 +540,6 @@ exports.getAttendanceReport = async (req, res, next) => {
     req.flash('error_msg', 'Error generating attendance report');
     res.redirect('/student/dashboard');
   }
-};
-
-exports.getMarks = async (req, res, next) => {
-    console.log('getMarks function called');
-    try {
-        const studentId = req.user;
-        console.log('Student ID:', studentId);
-
-        if (!studentId) {
-            console.log('No student ID found');
-            throw new Error('Student ID not found');
-        }
-
-        // Get student data with department name
-        const sql1 = `
-            SELECT s.*, d.d_name 
-            FROM student s 
-            JOIN department d ON s.dept_id = d.dept_id 
-            WHERE s.s_id = ?`;
-        const studentData = await queryParamPromise(sql1, [studentId]);
-        
-        if (!studentData || studentData.length === 0) {
-            console.log('No student data found');
-            throw new Error('Student data not found');
-        }
-        console.log('Student Data:', studentData[0]);
-
-        // Get all courses and marks for this student
-        const sql2 = `
-            SELECT c.c_id, c.name as course_name, c.semester,
-                   m.internal_marks,
-                   m.external_marks
-            FROM course c
-            LEFT JOIN marks m ON m.c_id = c.c_id AND m.s_id = ?
-            WHERE c.dept_id = ?
-            ORDER BY c.semester, c.c_id`;
-        
-        const marksData = await queryParamPromise(sql2, [studentId, studentData[0].dept_id]);
-        console.log('Marks Data:', marksData);
-
-        // Render the view
-        return res.render('Student/marks', {
-            page_name: 'marks',
-            studentData: studentData[0],
-            marksData: marksData,
-            error: null
-        });
-
-    } catch (err) {
-        console.error('Error in getMarks:', err);
-        return res.render('Student/marks', {
-            page_name: 'marks',
-            studentData: null,
-            marksData: [],
-            error: err.message
-        });
-    }
 };
 
 const pdf = require('html-pdf');
@@ -553,19 +570,25 @@ exports.downloadAttendanceReport = async (req, res, next) => {
       }
     }
 
-    // Get attendance data for each course
+    // Get attendance data for each course - UPDATED to match Excel report logic
     let attendanceStats = [];
     for (let course of courseData) {
-      const sql3 = `
-        SELECT 
-          COUNT(DISTINCT date) as total_classes,
-          SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as attended_classes
+      // Get all classes for the course (regardless of student attendance)
+      const totalClassesQuery = `
+        SELECT COUNT(DISTINCT date) as total 
         FROM attendance 
-        WHERE c_id = ? AND s_id = ?`;
-      const result = await queryParamPromise(sql3, [course.c_id, req.user]);
-      const stats = result[0];
-      const total = stats.total_classes || 0;
-      const attended = stats.attended_classes || 0;
+        WHERE c_id = ?`;
+      const totalClassesResult = await queryParamPromise(totalClassesQuery, [course.c_id]);
+      
+      // Get only the classes the student attended
+      const attendedClassesQuery = `
+        SELECT COUNT(*) as attended 
+        FROM attendance 
+        WHERE c_id = ? AND s_id = ? AND status = 1`;
+      const attendedClassesResult = await queryParamPromise(attendedClassesQuery, [course.c_id, req.user]);
+      
+      const total = totalClassesResult[0].total || 0;
+      const attended = attendedClassesResult[0].attended || 0;
       const percentage = total === 0 ? 0 : Math.round((attended / total) * 100);
 
       attendanceStats.push({
@@ -823,5 +846,74 @@ exports.downloadAttendanceExcel = async (req, res, next) => {
     console.error('Error in downloadAttendanceExcel:', err);
     req.flash('error_msg', 'Error generating Excel report');
     res.redirect('/student/attendance-report');
+  }
+};
+
+// API endpoint for attendance summary on dashboard
+exports.getAttendanceSummary = async (req, res, next) => {
+  try {
+    // Get student data
+    const sql1 = 'SELECT * FROM student WHERE s_id = ?';
+    const studentData = (await queryParamPromise(sql1, [req.user]))[0];
+
+    // Calculate current semester
+    const days = (await queryParamPromise('select datediff(current_date(), ?) as diff', [studentData.joining_date]))[0].diff;
+    let semester = Math.min(Math.floor(days / 182) + 1, 8);
+
+    // Get courses for current semester
+    let sql2 = 'SELECT * from course WHERE dept_id = ? AND semester = ?';
+    let courseData = await queryParamPromise(sql2, [studentData.dept_id, semester]);
+
+    // Fallback to highest semester with courses
+    if (courseData.length === 0) {
+      const sqlMaxSem = 'SELECT MAX(semester) as maxSem FROM course WHERE dept_id = ?';
+      const maxSemResult = await queryParamPromise(sqlMaxSem, [studentData.dept_id]);
+      if (maxSemResult[0].maxSem) {
+        semester = maxSemResult[0].maxSem;
+        courseData = await queryParamPromise(sql2, [studentData.dept_id, semester]);
+      }
+    }
+
+    // Get attendance data for each course - UPDATED to match Excel report logic
+    let courses = [];
+    for (let course of courseData) {
+      // Get all classes for the course (regardless of student attendance)
+      const totalClassesQuery = `
+        SELECT COUNT(DISTINCT date) as total 
+        FROM attendance 
+        WHERE c_id = ?`;
+      const totalClassesResult = await queryParamPromise(totalClassesQuery, [course.c_id]);
+      
+      // Get only the classes the student attended
+      const attendedClassesQuery = `
+        SELECT COUNT(*) as attended 
+        FROM attendance 
+        WHERE c_id = ? AND s_id = ? AND status = 1`;
+      const attendedClassesResult = await queryParamPromise(attendedClassesQuery, [course.c_id, req.user]);
+      
+      const total = totalClassesResult[0].total || 0;
+      const attended = attendedClassesResult[0].attended || 0;
+      const percentage = total === 0 ? 0 : Math.round((attended / total) * 100);
+
+      courses.push({
+        courseId: course.c_id,
+        courseName: course.name,
+        totalClasses: total,
+        attendedClasses: attended,
+        percentage: percentage
+      });
+    }
+
+    // Return JSON response
+    res.json({
+      success: true,
+      courses: courses
+    });
+  } catch (err) {
+    console.error('Error in getAttendanceSummary:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching attendance data'
+    });
   }
 };

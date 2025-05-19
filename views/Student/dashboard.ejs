@@ -19,23 +19,65 @@
                         <p class="card-text text-muted">Track your course attendance and ensure it meets the 75% threshold.</p>
                     </div>
                     <div class="card-footer text-center">
-                        <a href="/student/selectAttendance" class="btn btn-outline-primary btn-sm">View Attendance</a>
+                        <a href="/student/attendance-report" class="btn btn-primary btn-sm">View Attendance Report</a>
+                        <a href="/student/selectAttendance" class="btn btn-outline-primary btn-sm">Detailed View</a>
                     </div>
                 </div>
             </div>
 
-            <!-- Marks Card -->
+            <!-- Profile Card -->
             <div class="col-md-4 mb-4">
                 <div class="card shadow-sm border-light rounded">
                     <div class="card-body">
-                        <h5 class="card-title text-dark font-weight-bold">Marks</h5>
-                        <p class="card-text text-muted">Review your grades up to the previous semester.</p>
+                        <h5 class="card-title text-dark font-weight-bold">Profile</h5>
+                        <p class="card-text text-muted">View and manage your student profile information.</p>
                     </div>
                     <div class="card-footer text-center">
-                        <a href="/student/marks" class="btn btn-outline-primary btn-sm">View Marks</a>
+                        <a href="/student/profile" class="btn btn-outline-primary btn-sm">View Profile</a>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Recent Course Attendance -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <h4 class="mb-3">Recent Course Attendance</h4>
+            </div>
+
+            <% if (courseAttendance && courseAttendance.length > 0) { %>
+                <% courseAttendance.forEach(function(course) { %>
+                    <div class="col-md-4 mb-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header <%= course.percentage >= 75 ? 'bg-success' : 'bg-danger' %> text-white">
+                                <h5 class="mb-0"><%= course.courseName %> (<%= course.courseId %>)</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="progress mb-3" style="height: 24px;">
+                                    <div class="progress-bar <%= course.percentage >= 75 ? 'bg-success' : 'bg-danger' %>" 
+                                        role="progressbar" 
+                                        style="width: <%= course.percentage %>%"
+                                        aria-valuenow="<%= course.percentage %>" 
+                                        aria-valuemin="0" 
+                                        aria-valuemax="100">
+                                        <%= course.percentage %>%
+                                    </div>
+                                </div>
+                                <p class="card-text text-center font-weight-bold">
+                                    Classes Attended: <%= course.attendedClasses %> / <%= course.totalClasses %>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <p>No attendance data available. This could be because you don't have any courses assigned yet or attendance hasn't been recorded.</p>
+                        <a href="/student/attendance-report" class="btn btn-primary btn-sm">View Attendance Report</a>
+                    </div>
+                </div>
+            <% } %>
         </div>
     </main>
 </section>

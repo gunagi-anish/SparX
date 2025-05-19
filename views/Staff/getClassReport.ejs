@@ -67,9 +67,14 @@
                                                     <th scope="col">Classes Attended</th>
                                                     <th scope="col">Attendance %</th>
                                                     <th scope="col">Status</th>
+                                                    <th scope="col">Send Email</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
+                                                <form action="/staff/class-report/send-notification" method="POST" id="email-form">
+                                                    <input type="hidden" name="courseId" value="<%= classData.c_id %>">
+                                                    <input type="hidden" name="section" value="<%= classData.section %>">
+                                                
                                                 <% attendanceStats.forEach((student, index) => { %>
                                                     <tr>
                                                         <td><%= index + 1 %></td>
@@ -96,11 +101,39 @@
                                                                 <%= student.percentage >= 75 ? 'Good Standing' : 'Attendance Shortage' %>
                                                             </span>
                                                         </td>
+                                                        <td>
+                                                            <% if (student.percentage < 75) { %>
+                                                                <div class="custom-control custom-checkbox">
+                                                                    <input type="checkbox" class="custom-control-input student-checkbox" 
+                                                                           id="student<%= index %>" name="studentIds" value="<%= student.s_id %>">
+                                                                    <label class="custom-control-label" for="student<%= index %>">Select</label>
+                                                                </div>
+                                                            <% } %>
+                                                        </td>
                                                     </tr>
                                                 <% }); %>
                                             </tbody>
                                         </table>
                                     </div>
+                                    
+                                    <div class="mt-4 mb-3">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="custom-control custom-checkbox mb-3">
+                                                    <input type="checkbox" class="custom-control-input" id="select-all-below-75">
+                                                    <label class="custom-control-label" for="select-all-below-75">
+                                                        Select All Students Below 75% Attendance
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 text-right">
+                                                <button type="submit" class="btn btn-warning" id="send-email-btn">
+                                                    <i class="fas fa-envelope mr-1"></i> Send Attendance Notification Emails
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </form>
 
                                     <% if (attendanceStats.length === 0) { %>
                                         <div class="alert alert-info mt-4" role="alert">
@@ -136,10 +169,27 @@
             e.preventDefault();
             $wrapper.classList.toggle('toggled');
         });
+    </script>
+    
+    <script>
+        // Select all students with attendance below 75%
+        document.getElementById('select-all-below-75').addEventListener('change', function() {
+            // Only target checkboxes for students with attendance below 75%
+            // Since we only render checkboxes for students below 75%, we can select all of them
+            const checkboxes = document.querySelectorAll('.student-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
 
-        document.querySelector("#date-input").max = new Date().toISOString("en-US", {
-            timeZone: "Asia/Kolkata"
-        }).split("T")[0];
+        // Form validation - ensure at least one student is selected
+        document.getElementById('email-form').addEventListener('submit', function(e) {
+            const checkboxes = document.querySelectorAll('.student-checkbox:checked');
+            if (checkboxes.length === 0) {
+                e.preventDefault();
+                alert('Please select at least one student to send the notification.');
+            }
+        });
     </script>
 </body>
 

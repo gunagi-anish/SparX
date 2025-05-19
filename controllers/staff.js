@@ -5,9 +5,17 @@ const pdf = require('html-pdf');
 const path = require('path');
 const ExcelJS = require('exceljs');
 
-const mailgun = require('mailgun-js');
-const DOMAIN = process.env.DOMAIN_NAME;
-const mg = mailgun({ apiKey: process.env.MAILGUN_API_KEY, domain: DOMAIN });
+// Replace Mailgun with Nodemailer
+const nodemailer = require('nodemailer');
+
+// Create a nodemailer transporter using Gmail
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER || 'your-email@gmail.com',
+    pass: process.env.EMAIL_PASSWORD || 'your-app-password'
+  }
+});
 
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -452,7 +460,7 @@ exports.forgotPassword = async (req, res, next) => {
   );
 
   const data = {
-    from: 'noreplyCMS@mail.com',
+    from: 'No Reply <noreply@' + DOMAIN + '>',
     to: email,
     subject: 'Reset Password Link',
     html: `<h2>Please click on given link to reset your password</h2>
@@ -463,20 +471,23 @@ exports.forgotPassword = async (req, res, next) => {
   };
 
   const sql2 = 'UPDATE staff SET resetLink = ? WHERE email = ?';
-  db.query(sql2, [token, email], (err, success) => {
-    if (err) {
-      errors.push({ msg: 'Error In ResetLink' });
-      res.render('Staff/forgotPassword', { errors });
-    } else {
-      mg.messages().send(data, (err, body) => {
-        if (err) throw err;
-        else {
-          req.flash('success_msg', 'Reset Link Sent Successfully!');
-          res.redirect('/staff/forgot-password');
-        }
-      });
+  try {
+    await queryParamPromise(sql2, [token, email]);
+    
+    try {
+      const result = await transporter.sendMail(data);
+      console.log('Reset password email sent successfully:', result);
+      req.flash('success_msg', 'Reset Link Sent Successfully!');
+      return res.redirect('/staff/forgot-password');
+    } catch (mailErr) {
+      console.error('Error sending reset password email:', mailErr);
+      errors.push({ msg: 'Error Sending Email: ' + mailErr.message });
+      return res.render('Staff/forgotPassword', { errors });
     }
-  });
+  } catch (err) {
+    errors.push({ msg: 'Error In ResetLink' });
+    return res.render('Staff/forgotPassword', { errors });
+  }
 };
 
 exports.getResetPassword = (req, res, next) => {
@@ -1044,5 +1055,171 @@ exports.downloadClassReportExcel = async (req, res, next) => {
     console.error('Error in downloadClassReportExcel:', err);
     req.flash('error_msg', 'Error generating Excel report');
     res.redirect('/staff/class-report');
+  }
+};
+
+exports.sendAttendanceNotification = async (req, res, next) => {
+  try {
+    const { courseId, studentIds, section } = req.body;
+    const staffId = req.user;
+    
+    // Get staff data
+    const staffData = await queryParamPromise(
+      'SELECT * FROM staff WHERE st_id = ?', 
+      [staffId]
+    );
+    
+    // Get course data
+    const courseData = await queryParamPromise(
+      'SELECT * FROM course WHERE c_id = ?',
+      [courseId]
+    );
+    
+    // If no students selected, redirect back with error
+    if (!studentIds || (Array.isArray(studentIds) && studentIds.length === 0)) {
+      req.flash('error_msg', 'No students selected');
+      return res.redirect(`/staff/class-report/class/${courseId}?section=${section || ''}`);
+    }
+    
+    // Convert to array if single student ID
+    const studentsToNotify = Array.isArray(studentIds) ? studentIds : [studentIds];
+    
+    // Track successful and failed emails
+    let successCount = 0;
+    let failCount = 0;
+    
+    // Process each student
+    for (const studentId of studentsToNotify) {
+      try {
+        // Get student data
+        const studentData = await queryParamPromise(
+          'SELECT * FROM student WHERE s_id = ?',
+          [studentId]
+        );
+        
+        if (!studentData || studentData.length === 0) {
+          console.error('Student not found:', studentId);
+          failCount++;
+          continue;
+        }
+        
+        // Get attendance data
+        const totalClasses = await queryParamPromise(
+          'SELECT COUNT(DISTINCT date) as total FROM attendance WHERE c_id = ?',
+          [courseId]
+        );
+        
+        const attendedClasses = await queryParamPromise(
+          'SELECT COUNT(*) as attended FROM attendance WHERE c_id = ? AND s_id = ? AND status = 1',
+          [courseId, studentId]
+        );
+        
+        const percentage = totalClasses[0].total > 0 
+          ? ((attendedClasses[0].attended / totalClasses[0].total) * 100).toFixed(2)
+          : 0;
+        
+        // Prepare email data
+        const emailData = {
+          from: `"Sahyadri College" <${process.env.EMAIL_USER || 'your-email@gmail.com'}>`,
+          to: studentData[0].email,
+          subject: 'Low Attendance Warning - ' + courseData[0].name,
+          html: `
+            <h2>Attendance Warning: ${courseData[0].name}</h2>
+            <p>Dear ${studentData[0].s_name},</p>
+            <p>This is to notify you that your attendance in the course ${courseData[0].name} has fallen below the required threshold of 75%.</p>
+            <p><strong>Current Attendance:</strong> ${percentage}% (${attendedClasses[0].attended} out of ${totalClasses[0].total} classes)</p>
+            <p>Please note that a minimum attendance of 75% is required to be eligible for examinations.</p>
+            <p>If you have any concerns or require any clarification, please contact your course instructor, ${staffData[0].st_name}.</p>
+            <p>Regards,<br/>
+            ${staffData[0].st_name}<br/>
+            Course Instructor - ${courseData[0].name}<br/>
+            Sahyadri College of Engineering and Management</p>
+          `
+        };
+        
+        // Log the email being sent
+        console.log(`Sending attendance notification to ${studentData[0].email} with subject: ${emailData.subject}`);
+        
+        // Send email using updated Mailgun client
+        try {
+          const result = await transporter.sendMail(emailData);
+          console.log('Email sent successfully to student:', studentId, result);
+          successCount++;
+        } catch (mailErr) {
+          console.error('Error sending email to student:', studentId, mailErr);
+          failCount++;
+        }
+        
+      } catch (err) {
+        console.error('Error processing student notification:', studentId, err);
+        failCount++;
+      }
+    }
+    
+    // Set flash message and redirect
+    req.flash('success_msg', `Notifications sent to ${successCount} students. ${failCount > 0 ? failCount + ' failed.' : ''}`);
+    return res.redirect(`/staff/class-report/class/${courseId}?section=${section || ''}`);
+    
+  } catch (err) {
+    console.error('Error in sendAttendanceNotification:', err);
+    req.flash('error_msg', 'Error sending notifications');
+    return res.redirect('/staff/class-report');
+  }
+};
+
+exports.testEmail = async (req, res, next) => {
+  try {
+    const staffId = req.user;
+    
+    // Get staff data
+    const staffData = await queryParamPromise(
+      'SELECT * FROM staff WHERE st_id = ?', 
+      [staffId]
+    );
+    
+    if (!staffData || staffData.length === 0) {
+      req.flash('error_msg', 'Staff not found');
+      return res.redirect('/staff/dashboard');
+    }
+    
+    // Log environment variables (without exposing sensitive info)
+    console.log('Email Configuration:');
+    console.log('- DOMAIN_NAME configured:', process.env.DOMAIN_NAME ? 'Yes' : 'No');
+    console.log('- EMAIL_USER configured:', process.env.EMAIL_USER ? 'Yes' : 'No');
+    console.log('- EMAIL_PASSWORD configured:', process.env.EMAIL_PASSWORD ? 'Yes' : 'No');
+    
+    // Prepare test email data
+    const emailData = {
+      from: 'Test Email <test@' + DOMAIN + '>',
+      to: staffData[0].email,
+      subject: 'Test Email from Attendance System',
+      html: `
+        <h2>Test Email</h2>
+        <p>Dear ${staffData[0].st_name},</p>
+        <p>This is a test email from the College Management System.</p>
+        <p>If you're receiving this, email functionality is working correctly.</p>
+        <p>Regards,<br/>
+        System Administrator<br/>
+        Sahyadri College of Engineering and Management</p>
+      `
+    };
+    
+    console.log('Sending test email to:', staffData[0].email);
+    
+    // Send test email using updated Mailgun client
+    try {
+      const result = await transporter.sendMail(emailData);
+      console.log('Test email sent successfully:', result);
+      req.flash('success_msg', 'Test email sent successfully. Please check your inbox.');
+      return res.redirect('/staff/dashboard');
+    } catch (mailErr) {
+      console.error('Error sending test email:', mailErr);
+      req.flash('error_msg', `Error sending test email: ${mailErr.message}`);
+      return res.redirect('/staff/dashboard');
+    }
+  } catch (err) {
+    console.error('Error in testEmail function:', err);
+    req.flash('error_msg', 'Error sending test email');
+    return res.redirect('/staff/dashboard');
   }
 };

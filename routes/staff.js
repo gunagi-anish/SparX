@@ -33,10 +33,11 @@ router.get('/class-report/class/:id', requireAuth, controller.getClassReport);
 router.get('/class-report/:id/download', requireAuth, controller.downloadClassReport);
 router.get('/class-report/:id/download-excel', requireAuth, controller.downloadClassReportExcel);
 
-// Add marks routes
-router.get('/add-marks', requireAuth, controller.getAddMarks);
-router.get('/add-marks/class/:id', requireAuth, controller.getClassMarks);
-router.post('/add-marks/class/:id', requireAuth, controller.postClassMarks);
+// Add email notification route
+router.post('/class-report/send-notification', requireAuth, controller.sendAttendanceNotification);
+
+// Test email route
+router.get('/test-email', requireAuth, controller.testEmail);
 
 // 1.5 FORGET PASSWORD
 router.get('/forgot-password', forwardAuth, controller.getForgotPassword);
