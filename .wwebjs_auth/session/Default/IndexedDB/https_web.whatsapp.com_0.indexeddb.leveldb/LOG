@@ -1,0 +1,56 @@
+2025/05/20-22:29:55.808 5a0 Reusing MANIFEST C:\xampp\htdocs\SparX\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/05/20-22:29:55.810 5a0 Recovering log #1996
+2025/05/20-22:29:55.907 5a0 Reusing old log C:\xampp\htdocs\SparX\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/001996.log 
+2025/05/20-22:30:01.157 1890 Level-0 table #2019: started
+2025/05/20-22:30:01.177 1890 Level-0 table #2019: 556407 bytes OK
+2025/05/20-22:30:01.179 1890 Delete type=0 #1996
+2025/05/20-22:30:01.180 1890 Manual compaction at level-0 from '\x00-\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00.\x00\x00\x00' @ 0 : 0; will stop at '\x00-\x00\x00\x05' @ 5613322 : 1
+2025/05/20-22:30:01.180 1890 Compacting 1@0 + 1@1 files
+2025/05/20-22:30:01.206 1890 Generated table #2020@0: 8450 keys, 91080 bytes
+2025/05/20-22:30:01.230 1890 Generated table #2021@0: 5410 keys, 211354 bytes
+2025/05/20-22:30:01.249 1890 Generated table #2022@0: 6607 keys, 134697 bytes
+2025/05/20-22:30:01.249 1890 Compacted 1@0 + 1@1 files => 437131 bytes
+2025/05/20-22:30:01.250 1890 compacted to: files[ 0 3 30 0 0 0 0 ]
+2025/05/20-22:30:01.251 1890 Delete type=2 #2019
+2025/05/20-22:30:01.253 1890 Manual compaction at level-0 from '\x00-\x00\x00\x05' @ 5613322 : 1 .. '\x00.\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/05/20-22:30:04.187 3a4 Compacting 1@1 + 12@2 files
+2025/05/20-22:30:04.399 3a4 Generated table #2023@1: 26419 keys, 2274664 bytes
+2025/05/20-22:30:04.589 3a4 Generated table #2024@1: 31798 keys, 2229962 bytes
+2025/05/20-22:30:04.730 3a4 Generated table #2025@1: 32159 keys, 2196024 bytes
+2025/05/20-22:30:04.897 3a4 Generated table #2026@1: 35169 keys, 2242525 bytes
+2025/05/20-22:30:05.122 3a4 Generated table #2027@1: 35501 keys, 2308314 bytes
+2025/05/20-22:30:05.243 3a4 Generated table #2028@1: 17426 keys, 2288039 bytes
+2025/05/20-22:30:05.304 3a4 Generated table #2029@1: 5354 keys, 2129982 bytes
+2025/05/20-22:30:05.368 3a4 Generated table #2030@1: 5286 keys, 2124351 bytes
+2025/05/20-22:30:05.477 3a4 Generated table #2031@1: 37605 keys, 2169378 bytes
+2025/05/20-22:30:05.689 3a4 Generated table #2032@1: 99455 keys, 2250808 bytes
+2025/05/20-22:30:05.701 3a4 Generated table #2033@1: 4396 keys, 99868 bytes
+2025/05/20-22:30:05.701 3a4 Compacted 1@1 + 12@2 files => 22313915 bytes
+2025/05/20-22:30:05.702 3a4 compacted to: files[ 0 2 29 0 0 0 0 ]
+2025/05/20-22:30:05.703 3a4 Delete type=2 #1934
+2025/05/20-22:30:05.703 3a4 Delete type=2 #1943
+2025/05/20-22:30:05.703 3a4 Delete type=2 #1944
+2025/05/20-22:30:05.703 3a4 Delete type=2 #1945
+2025/05/20-22:30:05.703 3a4 Delete type=2 #1946
+2025/05/20-22:30:05.703 3a4 Delete type=2 #1992
+2025/05/20-22:30:05.703 3a4 Delete type=2 #2010
+2025/05/20-22:30:05.703 3a4 Delete type=2 #2011
+2025/05/20-22:30:05.703 3a4 Delete type=2 #2012
+2025/05/20-22:30:05.703 3a4 Delete type=2 #2013
+2025/05/20-22:30:05.703 3a4 Delete type=2 #2014
+2025/05/20-22:30:05.703 3a4 Delete type=2 #2015
+2025/05/20-22:30:05.703 3a4 Delete type=2 #2016
+2025/05/20-22:30:05.704 3a4 Delete type=2 #2021
+2025/05/20-22:30:05.946 3a4 Compacting 1@1 + 10@2 files
+2025/05/20-22:30:06.111 3a4 Generated table #2034@1: 48723 keys, 2205810 bytes
+2025/05/20-22:30:06.233 3a4 Generated table #2035@1: 49067 keys, 2205853 bytes
+2025/05/20-22:30:06.348 3a4 Generated table #2036@1: 52466 keys, 2221196 bytes
+2025/05/20-22:30:06.395 3a4 Generated table #2037@1: 1979 keys, 2153469 bytes
+2025/05/20-22:30:06.440 3a4 Generated table #2038@1: 1760 keys, 2148789 bytes
+2025/05/20-22:30:06.507 3a4 Generated table #2039@1: 2624 keys, 2155811 bytes
+2025/05/20-22:30:06.558 3a4 Generated table #2040@1: 2462 keys, 2152557 bytes
+2025/05/20-22:30:06.607 3a4 Generated table #2041@1: 2484 keys, 2154544 bytes
+2025/05/20-22:30:06.655 3a4 Generated table #2042@1: 3135 keys, 2153475 bytes
+2025/05/20-22:30:06.735 3a4 Generated table #2043@1: 26161 keys, 2177437 bytes
+2025/05/20-22:30:06.735 3a4 Compacted 1@1 + 10@2 files => 21728941 bytes
+2025/05/20-22:30:06.736 3a4 compacted to: files[ 0 1 29 0 0 0 0 ]

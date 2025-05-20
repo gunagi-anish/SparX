@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const pdf = require('html-pdf');
 const path = require('path');
 const ExcelJS = require('exceljs');
+const axios = require('axios');
 
 // Replace Mailgun with Nodemailer
 const nodemailer = require('nodemailer');
@@ -1058,9 +1059,11 @@ exports.downloadClassReportExcel = async (req, res, next) => {
   }
 };
 
+const { sendWhatsAppMessage } = require('../services/whatsapp');
+
 exports.sendAttendanceNotification = async (req, res, next) => {
   try {
-    const { courseId, studentIds, section } = req.body;
+    const { courseId, studentIds, section, notificationType } = req.body;
     const staffId = req.user;
     
     // Get staff data
@@ -1084,7 +1087,7 @@ exports.sendAttendanceNotification = async (req, res, next) => {
     // Convert to array if single student ID
     const studentsToNotify = Array.isArray(studentIds) ? studentIds : [studentIds];
     
-    // Track successful and failed emails
+    // Track successful and failed notifications
     let successCount = 0;
     let failCount = 0;
     
@@ -1118,36 +1121,52 @@ exports.sendAttendanceNotification = async (req, res, next) => {
           ? ((attendedClasses[0].attended / totalClasses[0].total) * 100).toFixed(2)
           : 0;
         
-        // Prepare email data
-        const emailData = {
-          from: `"Sahyadri College" <${process.env.EMAIL_USER || 'your-email@gmail.com'}>`,
-          to: studentData[0].email,
-          subject: 'Low Attendance Warning - ' + courseData[0].name,
-          html: `
-            <h2>Attendance Warning: ${courseData[0].name}</h2>
-            <p>Dear ${studentData[0].s_name},</p>
-            <p>This is to notify you that your attendance in the course ${courseData[0].name} has fallen below the required threshold of 75%.</p>
-            <p><strong>Current Attendance:</strong> ${percentage}% (${attendedClasses[0].attended} out of ${totalClasses[0].total} classes)</p>
-            <p>Please note that a minimum attendance of 75% is required to be eligible for examinations.</p>
-            <p>If you have any concerns or require any clarification, please contact your course instructor, ${staffData[0].st_name}.</p>
-            <p>Regards,<br/>
-            ${staffData[0].st_name}<br/>
-            Course Instructor - ${courseData[0].name}<br/>
-            Sahyadri College of Engineering and Management</p>
-          `
-        };
-        
-        // Log the email being sent
-        console.log(`Sending attendance notification to ${studentData[0].email} with subject: ${emailData.subject}`);
-        
-        // Send email using updated Mailgun client
-        try {
-          const result = await transporter.sendMail(emailData);
-          console.log('Email sent successfully to student:', studentId, result);
-          successCount++;
-        } catch (mailErr) {
-          console.error('Error sending email to student:', studentId, mailErr);
-          failCount++;
+        // Prepare notification message
+        const message = `
+Attendance Warning: ${courseData[0].name}
+
+Dear ${studentData[0].s_name},
+
+This is to notify you that your attendance in the course ${courseData[0].name} has fallen below the required threshold of 75%.
+
+Current Attendance: ${percentage}% (${attendedClasses[0].attended} out of ${totalClasses[0].total} classes)
+
+Please note that a minimum attendance of 75% is required to be eligible for examinations.
+
+If you have any concerns or require any clarification, please contact your course instructor, ${staffData[0].st_name}.
+
+Regards,
+${staffData[0].st_name}
+Course Instructor - ${courseData[0].name}
+Sahyadri College of Engineering and Management`;
+
+        if (notificationType === 'whatsapp') {
+          // Send WhatsApp notification
+          try {
+            await sendWhatsAppMessage(studentData[0].contact, message);
+            console.log('WhatsApp message sent successfully to student:', studentId);
+            successCount++;
+          } catch (whatsappErr) {
+            console.error('Error sending WhatsApp message to student:', studentId, whatsappErr);
+            failCount++;
+          }
+        } else {
+          // Send email notification
+          const emailData = {
+            from: `"Sahyadri College" <${process.env.EMAIL_USER || 'your-email@gmail.com'}>`,
+            to: studentData[0].email,
+            subject: 'Low Attendance Warning - ' + courseData[0].name,
+            html: message.replace(/\n/g, '<br>')
+          };
+          
+          try {
+            const result = await transporter.sendMail(emailData);
+            console.log('Email sent successfully to student:', studentId, result);
+            successCount++;
+          } catch (mailErr) {
+            console.error('Error sending email to student:', studentId, mailErr);
+            failCount++;
+          }
         }
         
       } catch (err) {
@@ -1157,7 +1176,8 @@ exports.sendAttendanceNotification = async (req, res, next) => {
     }
     
     // Set flash message and redirect
-    req.flash('success_msg', `Notifications sent to ${successCount} students. ${failCount > 0 ? failCount + ' failed.' : ''}`);
+    const notificationTypeText = notificationType === 'whatsapp' ? 'WhatsApp' : 'Email';
+    req.flash('success_msg', `${notificationTypeText} notifications sent to ${successCount} students. ${failCount > 0 ? failCount + ' failed.' : ''}`);
     return res.redirect(`/staff/class-report/class/${courseId}?section=${section || ''}`);
     
   } catch (err) {

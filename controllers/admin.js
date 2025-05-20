@@ -727,14 +727,13 @@ exports.postAddClass = async (req, res, next) => {
     req.flash('error', 'The staff and course are of different department');
     return res.redirect('/admin/addClass');
   }
-  const sql3 =
-    'select max(section) as `max_section` from student where dept_id = ?';
-  const max_section = (await queryParamPromise(sql3, [staffData.dept_id]))[0]
-    .max_section;
-  if (section <= 0 || section > max_section) {
-    req.flash('error', 'The section for the given department does not exist');
+  
+  // Validate section number
+  if (section <= 0) {
+    req.flash('error', 'Section number must be greater than 0');
     return res.redirect('/admin/addClass');
   }
+
   const sql4 = 'INSERT INTO class set ?';
   await queryParamPromise(sql4, {
     section: section,
