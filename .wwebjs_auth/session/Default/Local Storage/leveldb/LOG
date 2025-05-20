@@ -1,3 +1,6 @@
 2025/05/20-22:29:54.922 1890 Reusing MANIFEST C:\xampp\htdocs\SparX\.wwebjs_auth\session\Default\Local Storage\leveldb/MANIFEST-000001
 2025/05/20-22:29:54.924 1890 Recovering log #3
 2025/05/20-22:29:54.925 1890 Reusing old log C:\xampp\htdocs\SparX\.wwebjs_auth\session\Default\Local Storage\leveldb/000003.log 
+2025/05/20-23:00:06.879 3f54 Level-0 table #5: started
+2025/05/20-23:00:06.886 3f54 Level-0 table #5: 21234 bytes OK
+2025/05/20-23:00:06.892 3f54 Delete type=0 #3
